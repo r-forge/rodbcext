@@ -1,0 +1,11 @@
+Package: rodbcExt
+Type: Package
+Title: RODBC Extension
+Version: 0.1.1
+Date: 24 February 2009
+Depends: RODBC
+Author: Jorrel Khalil S. Aunario
+Maintainer: <jaunario@gmail.com>
+Description: Enhanced database connectivity functions
+License: GPLv3
+LazyLoad: yes
