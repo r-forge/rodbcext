@@ -3,9 +3,8 @@
 # Version 0.1  
 # License GPL3
 
-require(RODBC)
-
 dsnConnect <- function(dsn, retries=3){
+    cnt <- 0
     repeat {
 		cnt<-cnt+1
 		db <- odbcConnect(dsn)
@@ -13,8 +12,8 @@ dsnConnect <- function(dsn, retries=3){
 		    return(db)
 			break
 		}
-		else if (cnt > 4) {
-			cat("Unable to connect to database on",dsn,"\n")
+		else if (cnt > retries) {
+			cat("Unable to connect to database on ",dsn,". \n", sep="")
 			return(NULL)
 			stop();
 		}
