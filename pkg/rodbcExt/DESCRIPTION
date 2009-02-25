@@ -2,8 +2,8 @@ Package: rodbcExt
 Type: Package
 Title: RODBC Extension
 Version: 0.1.1
-Date: 24 February 2009
-Depends: RODBC
+Date: 2009-2-24
+Depends: methods, RODBC
 Author: Jorrel Khalil S. Aunario
 Maintainer: <jaunario@gmail.com>
 Description: Enhanced database connectivity functions

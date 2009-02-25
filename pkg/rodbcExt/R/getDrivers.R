@@ -1,6 +1,6 @@
 # Author: 	Jorrel Khalil S. Aunario, jaunario@gmail.com
 # Date: 18 February 2009
-# Version 0.1  
+# Version 0.1.1  
 # License GPL3
 
 getODBCDriverList <- function(){
