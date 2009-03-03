@@ -3,13 +3,13 @@
 # Version 0.1.1  
 # License GPL3
 
-dsnConnect <- function(dsn, retries=3){
+dsnConnect <- function(dsn, retries=3, ...){
     cnt <- 0
     repeat {
 		cnt<-cnt+1
-		db <- odbcConnect(dsn)
-		if (db!=-1){
-		    return(db)
+		con <- odbcConnect(dsn, ...)
+		if (con!=-1){
+		    return(con)
 			break
 		}
 		else if (cnt > retries) {
@@ -17,7 +17,27 @@ dsnConnect <- function(dsn, retries=3){
 			return(NULL)
 			stop();
 		}
-		rm(db)
+		rm(con)
 		cat("Retrying to connect. (retries=",retries,") \n", sep="")
 	}    
+}
+
+drvConnect <- function(drvname, server, db, usr, pwd, opt=27, retries=3, ...){
+    cstring <- paste("DRIVER={",drvname,"};SERVER=",server,";DATABASE=",db,";USER=",usr,";PASSWORD=",pwd,";OPTION=",opt,";", sep="")
+    cnt <- 0
+    repeat {
+		cnt<-cnt+1
+		con <- odbcDriverConnect(cstring, ...)
+		if (con!=-1){
+		    return(con)
+			break
+		}
+		else if (cnt > retries) {
+			cat("Unable to connect to database on ",server,". \n", sep="")
+			return(NULL)
+			stop();
+		}
+		rm(con)
+		cat("Retrying to connect. (retries=",retries,") \n", sep="")
+	}
 }

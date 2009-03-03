@@ -1,17 +1,27 @@
 \name{connectExt}
 \alias{dsnConnect}
+\alias{drvConnect}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Connecting to Databases in rodbcExt }
 \description{
   Functions for connecting to databases with automatic retry capability
 }
 \usage{
-dsnConnect(dsn, retries=3)
+dsnConnect(dsn, retries=3, ...)
+drvConnect(drvname, server, db, usr, pwd, opt=27, retries=3, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{dsn}{ ~~Describe \code{yields} here~~ }
+  \item{drvname}{ ~~Describe \code{fact} here~~ }
+  \item{server}{ ~~Describe \code{fact} here~~ }
+  \item{db}{ ~~Describe \code{fact} here~~ }
+  \item{usr}{ ~~Describe \code{fact} here~~ }
+  \item{pwd}{ ~~Describe \code{fact} here~~ }
+  \item{opt}{ ~~Describe \code{fact} here~~ }
   \item{retries}{ ~~Describe \code{fact} here~~ }
+  \item{...}{ ~~Describe \code{fact} here~~ }
+  
 }
 \details{
   ~~ If necessary, more details than the description above ~~

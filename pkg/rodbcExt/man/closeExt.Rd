@@ -1,17 +1,18 @@
 \name{closeExt}
-\alias{cleanDisconnect}
+\alias{disconnect}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Closing Connections in rodbcExt }
 \description{
   Closes a databases connection and then removes the object from memory. 
 }
 \usage{
-cleanDisconnect(channel, rmv=T)
+disconnect(channel, clean=T, env=.GlobalEnv)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{channel}{ ~~Describe \code{yields} here~~ }
-  \item{rmv}{ ~~Describe \code{fact} here~~ }
+  \item{clean}{ ~~Describe \code{fact} here~~ }
+  \item{env}{ ~~Describe \code{fact} here~~ }
 }
 \details{
   ~~ If necessary, more details than the description above ~~

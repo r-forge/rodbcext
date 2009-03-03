@@ -3,13 +3,13 @@
 # Version 0.1.1  
 # License GPL3
 
-cleanDisconnect <- function(channel, rmv=T, env=.GlobalEnv){
+disconnect <- function(channel, clean=T, env=.GlobalEnv){
     odbcClose(channel)
-    if (rmv){
+    if (clean){
         objs <- ls(envir=env)
         for (obj in objs){            
             cobj <- get(obj, envir=env)
-            if(is.atomic(cobj)|is.list(cobj) ){
+            if(class(cobj)=="RODBC"){
                 if (cobj==channel){
                     rm(list=obj, envir=env)
                 }
