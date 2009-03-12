@@ -7,8 +7,8 @@
   Functions for connecting to databases with automatic retry capability
 }
 \usage{
-dsnConnect(dsn, retries=3, ...)
-drvConnect(drvname, server, db, usr, pwd, opt=27, retries=3, ...)
+dsnConnect(dsn, retries=3, interval=60, ...)
+drvConnect(drvname, server, db, usr, pwd, opt=27, retries=3, interval=60, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +20,7 @@ drvConnect(drvname, server, db, usr, pwd, opt=27, retries=3, ...)
   \item{pwd}{ ~~Describe \code{fact} here~~ }
   \item{opt}{ ~~Describe \code{fact} here~~ }
   \item{retries}{ ~~Describe \code{fact} here~~ }
+  \item{interval}{ ~~Describe \code{fact} here~~ }
   \item{...}{ ~~Describe \code{fact} here~~ }
   
 }
