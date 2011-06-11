@@ -7,5 +7,5 @@ Depends: methods, RODBC
 Author: Jorrel Khalil S. Aunario
 Maintainer: <jaunario@gmail.com>
 Description: Enhanced database connectivity functions
-License: GPLv3
+License: GPL (>=2)
 LazyLoad: yes

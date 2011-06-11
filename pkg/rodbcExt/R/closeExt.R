@@ -3,7 +3,7 @@
 # Version 0.1.1  
 # License GPL3
 
-disconnect <- function(channel, clean=T, env=.GlobalEnv){
+disconnect <- function(channel, clean=TRUE, env=.GlobalEnv){
     odbcClose(channel)
     if (clean){
         objs <- ls(envir=env)

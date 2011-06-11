@@ -45,3 +45,25 @@ drvConnect <- function(drvname, server, db, usr, pwd, opt=27, retries=3, interva
 		cat("Retrying to connect. (retries=",retries,") \n", sep="")
 	}
 }
+
+mysqlConnect <- function(driver=getMySQLDriver(), hostname="localhost",user="root", pwd="", database="",option=3, ...){
+    # check parameters 
+    info <- Sys.info()   
+    if(length(driver)==0){
+        stop("No MySQL Driver specified/found")
+    } else if(length(driver)>1){
+        driver <- driver[1]
+        warning("Only one driver is allowed. Using first in the vector.")
+    }
+    constring <- paste(
+        ifelse(info["sysname"]=="Windows",paste("DRIVER={",driver,"};",sep=""),paste("DRIVER=",driver,";",sep="")),
+        paste("SERVER=",hostname,";",sep=""), 
+        ifelse(database=="","",paste("DATABASE=",database,";",sep="")),
+        paste("USER=",user,";",sep=""),
+        paste("PASSWORD=",pwd,";",sep=""),        
+        paste("OPTION=",option,";",sep=""),
+        sep=""
+    )
+    return(odbcDriverConnect(constring,...))
+}
+

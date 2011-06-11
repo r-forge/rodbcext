@@ -1,18 +1,15 @@
-\name{closeExt}
-\alias{disconnect}
+\name{Ascii}
+\alias{fillMissing}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Closing Connections in rodbcExt }
 \description{
   Closes a databases connection and then removes the object from memory. 
 }
 \usage{
-disconnect(channel, clean=T, env=.GlobalEnv)
+fillMissing()
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{channel}{ ~~Describe \code{yields} here~~ }
-  \item{clean}{ ~~Describe \code{fact} here~~ }
-  \item{env}{ ~~Describe \code{fact} here~~ }
 }
 \details{
   ~~ If necessary, more details than the description above ~~

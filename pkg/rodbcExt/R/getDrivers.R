@@ -8,35 +8,30 @@ getODBCDriverList <- function(){
     if (info["sysname"]=="Windows"){
         iDrivers <- readRegistry("SOFTWARE\\ODBC\\ODBCINST.INI\\ODBC Drivers","HLM")
         driverList <- names(iDrivers)
-        return(driverList)
     }
-    else {
+    else if (info["sysname"]=="Linux"){
+        iDrivers <- system("odbcinst -q -d", intern=TRUE)
+        driverList <- sub("\\[", "",sub("\\]","",iDrivers))
+    } else {
         cat("Not yet supported. \n")
-        return(NULL)
+        driverList <- character(0)
     }
+    return(driverList)
 }
 
 getODBCDriver <- function(dbmsname){
-    info <- Sys.info()
-    if (info["sysname"]=="Windows"){
-        drivers <- getODBCDriverList()
-        avail <- grep(dbmsname, drivers)
+    drivers <- getODBCDriverList()
+    avail <- grep(dbmsname, drivers)
          
-        if (length(avail)>0){
-            # Return the first ODBC driver
-            return(drivers[avail[1]])
-        }
-        else {
-            return(NULL)
-        }
-        
+    if (length(avail)>0){
+        # Return the first ODBC driver
+        return(drivers[avail[1]])
     }
     else {
-        cat("Not yet supported. \n")
-        return(NULL)
+        return(character(0))
     }
 }
 
-getMySQLDriver <- function(){
+mysqlDriver <- function(){
     return(getODBCDriver("MySQL"))
 }
