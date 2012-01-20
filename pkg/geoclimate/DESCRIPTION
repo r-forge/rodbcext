@@ -3,7 +3,7 @@ Type: Package
 Title: Climate and Weather Data Processing at the IRRI GIS Laboratory
 Version: 0.0.1
 Date: 2009-2-24
-Depends: methods, rodbcExt, weather
+Depends: methods, rodbcExt, weather, genutils, ncdf
 Author: Jorrel Khalil S. Aunario
 Maintainer: <jaunario@gmail.com>
 Description: [description]
