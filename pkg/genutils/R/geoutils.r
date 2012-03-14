@@ -4,23 +4,19 @@
 # Licence GPL v3
 
 dd2DMS <- function(dd, lat=T){
-    if (dd!=-99){
-        aDD <- abs(dd)
-        deg <- trunc(aDD)
-        dec <- aDD - deg
-        mn <- round(dec*60)
-        DMS <- paste(deg, mn)
-        if (lat & dd>0){                                
-            DMS <- paste(DMS, "N")
-        } else if (lat & dd<0){
-            DMS <- paste(DMS, "S")
-        } else if (!lat & dd>0){
-            DMS <- paste(DMS, "E")
-        } else {
-            DMS <- paste(DMS, "W")
-        }
+    aDD <- abs(dd)
+    deg <- trunc(aDD)
+    dec <- aDD - deg
+    mn <- round(dec*60)
+    DMS <- paste(deg, mn)
+    if (lat & dd>0){                                
+        DMS <- paste(DMS, "N")
+    } else if (lat & dd<0){
+        DMS <- paste(DMS, "S")
+    } else if (!lat & dd>0){
+        DMS <- paste(DMS, "E")
     } else {
-        DMS <- "-99."
+        DMS <- paste(DMS, "W")
     }
     return(DMS)
 }

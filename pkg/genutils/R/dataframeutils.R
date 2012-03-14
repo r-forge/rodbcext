@@ -3,7 +3,7 @@
 # Version 0.0.1
 # Licence GPL v3
 
-cleanDframe <- function(dat, cols=colnames(dat), addcols=TRUE, rmOtherCols=TRUE){
+clean.dataframe <- function(dat, cols=colnames(dat), addcols=TRUE, rmOtherCols=TRUE){
     miss <- cols[!cols %in% colnames(dat)]
     if (addcols & length(miss)>0){
         for (m in miss){
@@ -33,7 +33,9 @@ cleanDframe <- function(dat, cols=colnames(dat), addcols=TRUE, rmOtherCols=TRUE)
 
 recodeMissing <- function(dat, cols, old, new=NA){
     for (i in 1:length(cols)){
-        dat[dat[,cols[i]]==old,cols[i]] <- new
+        change <- which(dat[,cols[i]]==old)
+        if(length(change)>0) dat[change,cols[i]] <- new
     }
     return(dat)
 }
+

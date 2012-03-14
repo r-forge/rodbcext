@@ -3,9 +3,22 @@
 # Version 0.0.1
 # Licence GPL v3
 
-serialn <- function(x, width=2){    
-    #TODO just use sprintf
-    return(sprintf(paste("%0",width,"d",sep=""),x))
+withRetry <- function(expr, retries=5, delay=60, inc.delay=TRUE){
+  tries <- 0
+  success <- FALSE
+  while(success==FALSE & tries<retries){
+    items <- try(expr,silent=TRUE)
+    if (class(items)=="try-error"){
+      show.message(items,appendLF=FALSE)
+      tries <- tries+1
+      tdelay <- ifelse(inc.delay,delay*tries,delay)
+      
+    } else {
+      success <- TRUE
+    }		
+  }
+  if (!success) items <- vector()
+  return(items)
 }
 
 openURL <- function(urlstr, retries=1, verbose=FALSE){
@@ -45,42 +58,9 @@ readURL <- function(urlstr, retries=1, verbose=FALSE){
     return(lines)    
 }
 
-show.message <- function(..., eol="", sleeptime=0){
-	cat(rep(" ", options("width")),"\r",sep="")
-	cat(...,eol,sep="")
-	flush.console()
-	Sys.sleep(sleeptime)
-}
-
 force.directories <- function(path,...){
-    
     if(!file.exists(path)){
         success <- dir.create(path,...)  
     } else success <- TRUE
     return(success)
-}
-
-withRetry <- function(expr, retries=10, initpause=30, failtime=10){
-	tries <- 0
-	success <- FALSE
-	while(success==FALSE & (tries<retries | failtime>(initpause*tries))){
-		items <- try(expr,silent=TRUE)
-		if (class(items)=="try-error"){
-			tries <- tries+1
-			show.message("Timeout? trying again in ", (initpause*tries) ," secs...", eol="\n")
-			Sys.sleep(initpause*tries)
-		} else {
-			success <- TRUE
-		}		
-	}
-	if (!success) items <- vector()
-	return(items)
-}
-
-strToChar <- function(str){
-    return(unlist(strsplit(str,"")))
-}
-
-rescale <- function(x, oldmin, oldmax, newmin, newmax){
-	return((x-oldmin)*(newmax-newmin)/(oldmax-oldmin) + newmin)
 }
