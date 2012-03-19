@@ -12,7 +12,7 @@ withRetry <- function(expr, retries=5, delay=60, inc.delay=TRUE){
       show.message(items,appendLF=FALSE)
       tries <- tries+1
       tdelay <- ifelse(inc.delay,delay*tries,delay)
-      
+      timer.message("Retry in ", time=tdelay)
     } else {
       success <- TRUE
     }		

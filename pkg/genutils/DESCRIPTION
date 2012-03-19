@@ -1,7 +1,7 @@
 Package: genutils
 Type: Package
 Title: IRRI Geography Lab - General Utilities
-Version: 0.0.1
+Version: 0.0.2
 Date: 2011-10-19
 Depends: methods
 Author: Jorrel Khalil S. Aunario
