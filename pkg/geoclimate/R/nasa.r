@@ -32,14 +32,10 @@ get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(
 			dlines <- readLines(fname)
 		}
 		
-		if (length(dlines)==0){
-			stline <- endline <- vector()
-		} else {					
+		if (length(dlines)>20){
 			stline <- grep(paste(format(stdate,"%Y"),format(as.numeric(format(stdate,"%j")),width=3)), dlines)
 			endline <- grep(paste(format(endate,"%Y"),format(as.numeric(format(endate,"%j")),width=3)), dlines)
-		}
-		
-		if (length(stline)!=0 & length(endline)!=0) {
+
 			writeLines(dlines, fname)
 			alt <- as.numeric(unlist(strsplit(dlines[grep("Elevation", dlines)],"="))[2])
 			dlines <- dlines[stline:endline]
