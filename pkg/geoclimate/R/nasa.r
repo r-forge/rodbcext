@@ -32,10 +32,15 @@ get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(
 			dlines <- readLines(fname)
 		}
 		
-		if (length(dlines)>20){
-			stline <- grep(paste(format(stdate,"%Y"),format(as.numeric(format(stdate,"%j")),width=3)), dlines)
-			endline <- grep(paste(format(endate,"%Y"),format(as.numeric(format(endate,"%j")),width=3)), dlines)
-
+		# Check download integrity
+		stline <- grep(paste(format(stdate,"%Y"),format(as.numeric(format(stdate,"%j")),width=3)), dlines)
+		endline <- grep(paste(format(endate,"%Y"),format(as.numeric(format(endate,"%j")),width=3)), dlines)
+		if (length(stline)!=1|length(endline)!=1){
+			show.message("Incomplete or No data found on file. If file ", basename(fname), " is on disk, remove the file then rerun this program.")
+			
+		} else if(length(unlist(strsplit(gsub("[[:space:]]+"," ",dlines[endline]), " ")))!=10){
+			show.message("Incomplete download detected. If file ", basename(fname), " is on disk, remove the file then rerun this program.")
+		} else {
 			writeLines(dlines, fname)
 			alt <- as.numeric(unlist(strsplit(dlines[grep("Elevation", dlines)],"="))[2])
 			dlines <- dlines[stline:endline]
@@ -57,3 +62,4 @@ get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(
 	}
 	return(result)
 }
+ get.nasa(-177.5,64.5,st="2009-1-1", en="2012-2-29", rm.existing=FALSE)
