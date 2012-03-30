@@ -62,4 +62,4 @@ get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(
 	}
 	return(result)
 }
- get.nasa(-177.5,64.5,st="2009-1-1", en="2012-2-29", rm.existing=FALSE)
+ 
