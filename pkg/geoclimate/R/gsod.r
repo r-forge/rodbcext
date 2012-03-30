@@ -4,13 +4,31 @@
 # Licence GPL v3
 
 # Current ftp site
+GSOD.ftp <- "ftp://ftp.ncdc.noaa.gov/pub/data/gsod"
+GSOD.varrefs <- read.csv(system.file("gsod_ref.csv", package="geoclimate"), stringsAsFactors=FALSE)
+# TODO proper parse of GSOD.stations
+GSOD.stations <- read.csv(system.file("gsod_stations.csv", package="geoclimate"), stringsAsFactors=FALSE)
+
+
+GSOD.update <- function(){
+	if(!file.copy(system.file("gsod_stations.csv", package="geoclimate"),paste(system.file("gsod_stations.csv", package="geoclimate"),".bck",sep=""),overwrite=TRUE)){
+		show.message("Unable to create station data backup file. GSOD update process aborted.", appendLF=TRUE)
+	} else {
+		show.message("Downloading station info file from GSOD FTP site.", EL=TRUE, appendLF=FALSE)
+		dl.success <- withRetry(download.file("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/ISH-HISTORY.CSV",system.file("gsod_stations.csv", package="geoclimate"),mode="wb"))
+		if (dl.success!=0){
+			show.message("Failed to connect GSOD FTP site.", appendLF=TRUE)
+			file.copy(system.file("gsod_stations.csv.bck", package="geoclimate"),system.file("gsod_stations.csv", package="geoclimate"),overwrite=TRUE)
+		} else {
+			show.message("Reading station info file from GSOD website.", appendLF=TRUE)
+			assign("GSOD.stations", read.csv(system.file("gsod_stations.csv", package="geoclimate"), stringsAsFactors=FALSE),envir=.GlobalEnv)
+		}
+	}		
+}
 
 get.gsod <- function(year, station, savepath=getwd(), rm.existing=FALSE){
 	result <- vector()
 	
-	GSOD.ftp <- "ftp://ftp.ncdc.noaa.gov/pub/data/gsod"
-	GSOD.varrefs <- read.csv(system.file("gsod_ref.csv", package="geoclimate"), stringsAsFactors=FALSE)
-
 	if(!force.directories(savepath, recursive=TRUE)){
 		show.message("Error: Can't create download path.", appendLF=TRUE)
 	} else if(!require(RCurl)){
@@ -44,17 +62,17 @@ get.gsod <- function(year, station, savepath=getwd(), rm.existing=FALSE){
 				gsod <- as.data.frame(wdate)
 				
 				# CLEAN UP CLIMATE DATA
-				gsod$tavg  <- round(FtoC(as.numeric(TEMP)),1)*10 # MEAN TEMP
-				gsod$slpressure   <- as.numeric(SLP)*10  # SEA LEVEL PRESSURE
-				gsod$stpressure   <- as.numeric(STP)*10  # STATION PRESSURE
-				gsod$tdew  <- round(FtoC(as.numeric(DEWP)),1)*10  # MEAN DEW POINT
+				gsod$tavg 		<- round(FtoC(as.numeric(TEMP)),1)*10 # MEAN TEMP
+				gsod$slpressure <- as.numeric(SLP)*10  # SEA LEVEL PRESSURE
+				gsod$stpressure <- as.numeric(STP)*10  # STATION PRESSURE
+				gsod$tdew 		<- round(FtoC(as.numeric(DEWP)),1)*10  # MEAN DEW POINT
 				gsod$visibility <- round((as.numeric(VISIB) * 1.609344),1)*10 # VISIBILITY
 				
 				##############################################
 				# WINDSPEED NEEDED IN ORYZA2k
-				gsod$wind  <- round(as.numeric(WDSP) * 0.514444444,1)*10 # WIND SPEED
-				gsod$maxwind <- round(as.numeric(MXSPD) * 0.514444444,1)*10  # MAX SUSTAINED SPEED
-				gsod$gust  <- round(as.numeric(GUST) * 0.514444444,1)*10  # MAX GUST
+				gsod$wind  		<- round(as.numeric(WDSP) * 0.514444444,1)*10 # WIND SPEED
+				gsod$maxwind 	<- round(as.numeric(MXSPD) * 0.514444444,1)*10  # MAX SUSTAINED SPEED
+				gsod$gust  		<- round(as.numeric(GUST) * 0.514444444,1)*10  # MAX GUST
 			  
 				##############################################
 				# MAX T NEEDED IN ORYZA2k
@@ -77,9 +95,10 @@ get.gsod <- function(year, station, savepath=getwd(), rm.existing=FALSE){
 				gsod <- cbind(gsod, indicators, stringsAsFactors=FALSE)
 				result <- new('weather')
 				result@stn <- station
-				result@lon <- x
-				result@lat <- y
-				result@alt <- alt
+				# TODO: get from database?
+				#result@lon <- x
+				#result@lat <- y
+				#result@alt <- alt
 				result@w <- gsod
 			}
 		}

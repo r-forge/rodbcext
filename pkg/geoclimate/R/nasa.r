@@ -3,6 +3,7 @@
 # Version 0.0.1
 # Licence GPL v3
 
+#TODO option savefile or not
 get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(), rm.existing=FALSE){
 	result <- vector()
 	if(length(x)!=1|length(y)!=1){
