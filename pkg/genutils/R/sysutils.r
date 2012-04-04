@@ -17,7 +17,6 @@ withRetry <- function(expr, retries=5, delay=60, inc.delay=TRUE){
       success <- TRUE
     }		
   }
-  if (!success) items <- vector()
   return(items)
 }
 

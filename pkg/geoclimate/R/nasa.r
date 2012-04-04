@@ -3,64 +3,78 @@
 # Version 0.0.1
 # Licence GPL v3
 
-#TODO option savefile or not
 get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(), rm.existing=FALSE){
-	result <- vector()
+	result <- new("weather")
+	src <- ""
 	if(length(x)!=1|length(y)!=1){
 		show.message("Warning: Either x or y has length > 1. Using first only.", appendLF=TRUE)
 		x <- x[1]
 		y <- y[1]
 	}
-	if(!force.directories(savepath)) {
-		show.message("Error: Cannot create ", savepath, appendLF=TRUE)
+	result@lon <- x
+	result@lat <- y
+	
+	# check if downloaded file can be saved to disk
+	savepath[is.na(savepath)] <- NULL
+	proceedwrite <- ifelse(is.character(savepath),force.directories(savepath),FALSE)
+	
+	cell <- cellFromXY(raster(),t(c(x,y)))
+	result@stn <- as.character(cell)
+	
+
+	stdate <- as.Date(stdate)
+	endate <- as.Date(endate)
+	
+	fname <- paste(paste("nasa",cell,x,y,format(stdate,"%Y.%m.%d"),format(endate,"%Y.%m.%d"), sep="_"), ".txt",sep="")
+	dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=swv_dwn&p=T2M&p=T2MN&p=T2MX&p=RH2M&p=DFP2M&p=RAIN&p=WS10M&submit=Submit", sep="")
+	
+	show.message("Reading ", appendLF=FALSE)
+	if (!file.exists(paste(savepath, fname, sep="/"))){
+		show.message(dlurl, appendLF=TRUE)
+		dlines <- withRetry(readLines(dlurl))		
+		src <- dlurl		
+	} else if (rm.existing | file.info(paste(savepath, fname, sep="/"))$size==0){
+		file.remove(paste(savepath, fname, sep="/"))
+		show.message(dlurl, appendLF=TRUE)
+		dlines <- withRetry(readLines(dlurl))
+		src <- dlurl
 	} else {
-		stdate <- as.Date(stdate)
-		endate <- as.Date(endate)
-		
-		fname <- paste(savepath, paste(paste("nasa",x,y,format(stdate,"%Y.%m.%d"),format(endate,"%Y.%m.%d"), sep="_"), ".txt",sep=""), sep="/")
-		dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=swv_dwn&p=T2M&p=T2MN&p=T2MX&p=RH2M&p=DFP2M&p=RAIN&p=WS10M&submit=Submit", sep="")
-		
-		show.message("Reading ", appendLF=FALSE)
-		if (!file.exists(fname)){
-			show.message(dlurl, appendLF=TRUE)
-			dlines <- withRetry(readLines(dlurl))
-		} else if (rm.existing | file.info(fname)$size==0){
-			file.remove(fname)
-			show.message(dlurl, appendLF=TRUE)
-			dlines <- withRetry(readLines(dlurl))
-		} else {
-			show.message(fname, appendLF=TRUE)
-			dlines <- readLines(fname)
-		}
-		
+		show.message(paste(savepath, fname, sep="/"), appendLF=TRUE)
+		dlines <- readLines(paste(savepath, fname, sep="/"))
+		src <- paste(savepath, fname, sep="/")		
+	}
+	
+	if (class(dlines)=="try-error"){
+		msg <- as.character(dlines)
+	} else {
 		# Check download integrity
 		stline <- grep(paste(format(stdate,"%Y"),format(as.numeric(format(stdate,"%j")),width=3)), dlines)
 		endline <- grep(paste(format(endate,"%Y"),format(as.numeric(format(endate,"%j")),width=3)), dlines)
+		
 		if (length(stline)!=1|length(endline)!=1){
-			show.message("Incomplete or No data found on file. If file ", basename(fname), " is on disk, remove the file then rerun this program.")
-			
-		} else if(length(unlist(strsplit(gsub("[[:space:]]+"," ",dlines[endline]), " ")))!=10){
-			show.message("Incomplete download detected. If file ", basename(fname), " is on disk, remove the file then rerun this program.")
+			msg <- paste("Incomplete or No data found on file. If file", fname, "is on disk, remove the file then rerun this program.")
+		} else if(length(unlist(strsplit(dlines[endline], "[[:space:]]+")))!=10){
+			msg <- paste("Incomplete download detected. If file", fname, "is on disk, remove the file then rerun this program.")
 		} else {
-			writeLines(dlines, fname)
+			msg <- paste("Read from", src)
+			if (proceedwrite) writeLines(dlines, paste(savepath, fname, sep="/"))
 			alt <- as.numeric(unlist(strsplit(dlines[grep("Elevation", dlines)],"="))[2])
 			dlines <- dlines[stline:endline]
-			dvector <- unlist(strsplit(gsub("[[:space:]]+"," ",dlines), " "))
+			dvector <- unlist(strsplit(dlines, "[[:space:]]+"))
 			dvector[dvector=="-"] <- NA
 			nasadata <- as.data.frame(matrix(as.numeric(dvector), ncol=10, byrow=TRUE))
 			colnames(nasadata) <- c("yr", "doy", "srad", "tavg", "tmin", "tmax", "rh2m", "tdew", "prec", "wind")
 			wdate <- format(as.Date(paste(nasadata$yr,nasadata$doy),"%Y %j"),"%Y-%m-%d")
 			nasadata <- cbind(wdate, nasadata[,-(1:2)], stringsAsFactors=FALSE)
-			result <- new('weather')
-			result@stn <- as.character(cellFromXY(raster(),t(c(x,y))))
-			result@lon <- x
-			result@lat <- y
+			
 			result@alt <- alt
 			result@w <- nasadata
 			rm(dlines,dvector,nasadata)
 			gc(verbose=FALSE)
 		}
 	}
+	show.message(msg)
+	result@rmk <- msg
 	return(result)
 }
  
