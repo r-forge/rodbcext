@@ -5,12 +5,32 @@
 
 # Current ftp site
 GSOD.ftp <- "ftp://ftp.ncdc.noaa.gov/pub/data/gsod"
+# Reference to var values for parsing downloaded data
 GSOD.varrefs <- read.csv(system.file("gsod_ref.csv", package="geoclimate"), stringsAsFactors=FALSE)
-# TODO proper parse of GSOD.stations
-GSOD.stations <- read.csv(system.file("gsod_stations.csv", package="geoclimate"), stringsAsFactors=FALSE)
-GSOD.stations$stationid <- paste(sprintf("%05d",GSOD.stations$USAF), GSOD.stations$WBAN, sep="-")
 
-GSOD.update <- function(){
+GSOD.readStations <- function(stationfile=system.file("gsod_stations.csv", package="geoclimate"), rm.nodata=TRUE, rm.nocoords=TRUE){
+    show.message("Reading GSOD station info file.", appendLF=TRUE)					
+    stations <- read.csv(stationfile, stringsAsFactors=FALSE)
+    if(rm.nodata) stations <- stations[-which(is.na(stations$BEGIN)),]
+    if(rm.nocoords) stations <- stations[-which(stations$LAT==-99999|is.na(stations$LAT)),]
+    stationid <- paste(sprintf("%06d",stations$USAF), sprintf("%05d", stations$WBAN), sep="-")
+    stations <- cbind(stationid,stations, stringsAsFactors=FALSE)
+    
+    # Change to float
+    stations$LAT <- stations$LAT/1000
+    stations$LON <- stations$LON/1000
+    stations$ELEV..1M.[stations$ELEV..1M.==-99999] <- NA
+    stations$ELEV..1M. <- stations$ELEV..1M./10
+    # Rename elevation fieldname 
+    colnames(stations)[colnames(stations)=="ELEV..1M."] <- "ELEV1M"
+    # Change to date 
+    stations$BEGIN <- as.Date(as.character(stations$BEGIN), "%Y%m%d")
+    stations$END <- as.Date(as.character(stations$END), "%Y%m%d")
+	return(stations)
+}
+GSOD.stations <- GSOD.readStations()
+
+GSOD.updateStations <- function(){
 	success <- FALSE
 	if(!require(RCurl)){
 		show.message("Error: RCurl package not found.", appendLF=TRUE)		
@@ -23,8 +43,7 @@ GSOD.update <- function(){
 		if (age<2){
 			show.message("GSOD station file is upto date.", appendLF=TRUE)
 			success <- TRUE
-		} else {
-		
+		} else {		
 			if(!file.copy(system.file("gsod_stations.csv", package="geoclimate"),paste(system.file("gsod_stations.csv", package="geoclimate"),".bck",sep=""),overwrite=TRUE)){
 				show.message("Unable to create station data backup file. GSOD update process aborted.", appendLF=TRUE)
 			} else {
@@ -33,94 +52,120 @@ GSOD.update <- function(){
 				if (dl.success!=0){
 					show.message("Failed to connect GSOD FTP site.", appendLF=TRUE)
 					file.copy(system.file("gsod_stations.csv.bck", package="geoclimate"),system.file("gsod_stations.csv", package="geoclimate"),overwrite=TRUE)
-				} else {
-					show.message("Reading station info file from GSOD website.", appendLF=TRUE)
-					assign("GSOD.stations", read.csv(system.file("gsod_stations.csv", package="geoclimate"), stringsAsFactors=FALSE),envir=.GlobalEnv)
-				}
-				show.message("GSOD Stations info update complete.", EL=TRUE, appendLF=TRUE)
+				} 
+				show.message("GSOD Stations info file update complete.", EL=TRUE, appendLF=TRUE)
 				success <- TRUE
 			}		
 		}
 	}
 }
 
-get.gsod <- function(year, station, savepath=getwd(), rm.existing=FALSE){
-	result <- new("weather")
-	
-	if(!force.directories(savepath, recursive=TRUE)){
-		show.message("Error: Can't create download path.", appendLF=TRUE)
-	} else if(!require(RCurl)){
-		show.message("Error: RCurl package not found.", appendLF=TRUE)
-	} else {
-		fname <- paste(station,"-",year,".op.gz", sep="")
-		ftpurl <- paste(GSOD.ftp, year, fname, sep="/")
-		available <- withRetry(getURL(paste(GSOD.ftp,"/",year,"/",sep="")))
-		if (!grepl(station, available)){
-			show.message("Data not available on ", station, " for year ", year,".", appendLF=TRUE)
-		} else {
-			dl.success <- withRetry(download.file(ftpurl, destfile=paste(savepath,fname, sep="/"), mode="wb"))
-			
-			# Parse the gsod file if successfully downloaded
-			if (dl.success==0){
-				gz <- gzfile(paste(savepath,fname,sep="/"))
-				dlines <- readLines(gz)
-				close(gz)
-				
-				#Parsing the GSOD file
-				for (i in 1:14){
-					assign(GSOD.varrefs$variable[i], trim(substr(dlines[-1], GSOD.varrefs$stpos[i], GSOD.varrefs$enpos[i])))
-					if(!is.na(GSOD.varrefs$missing[i])) {
-						tmp <- get(GSOD.varrefs$variable[i])
-						tmp[tmp==as.character(GSOD.varrefs$missing[i])] <- NA
-						assign(GSOD.varrefs$variable[i],tmp)
-					}
-				}
+#gsod.download <- function(gsodurl,fname=basename(gsodurl), ...){
+#	dl.success <- FALSE
+#	gsodzip <- withRetry(getBinaryURL(gsodurl), ...)
+#	if (class(gsodzip)!="try-error") {
+#		writeBin(gsodzip, fname)
+#		dl.success <- TRUE
+#	}
+#	return(dl.success)
+#}
+get.gsod <- function(station, year=as.numeric(format(Sys.Date(),"%Y")), savepath=getwd(), rm.existing=FALSE,...){
 
-				wdate <- as.Date(YEARMODA,"%Y%m%d")                            
-				gsod <- as.data.frame(wdate)
-				
-				# CLEAN UP CLIMATE DATA
-				gsod$tavg 		<- round(FtoC(as.numeric(TEMP)),1)*10 # MEAN TEMP
-				gsod$slpressure <- as.numeric(SLP)*10  # SEA LEVEL PRESSURE
-				gsod$stpressure <- as.numeric(STP)*10  # STATION PRESSURE
-				gsod$tdew 		<- round(FtoC(as.numeric(DEWP)),1)*10  # MEAN DEW POINT
-				gsod$visibility <- round((as.numeric(VISIB) * 1.609344),1)*10 # VISIBILITY
-				
-				##############################################
-				# WINDSPEED NEEDED IN ORYZA2k
-				gsod$wind  		<- round(as.numeric(WDSP) * 0.514444444,1)*10 # WIND SPEED
-				gsod$maxwind 	<- round(as.numeric(MXSPD) * 0.514444444,1)*10  # MAX SUSTAINED SPEED
-				gsod$gust  		<- round(as.numeric(GUST) * 0.514444444,1)*10  # MAX GUST
-			  
-				##############################################
-				# MAX T NEEDED IN ORYZA2k
-				gsod$tmax   <- round(FtoC(as.numeric(MAX)),1)*10  # MAX T
-			  
-				##############################################
-				# MIN 2 NEEDED IN ORYZA2k
-				gsod$tmin   <- round(FtoC(as.numeric(MIN)),1)*10  # MIN T
-			
-				##############################################
-				# RAINFALL NEEDED IN ORYZA2k
-				gsod$prec   <- round(as.numeric(PRCP)*100/25.4,1)*10  # RAINFALL
-				
-				##############################################
-				# SNOW DEPTH
-				gsod$snowdepth   <- round(as.numeric(SNDP)*100/25.4,1)*10  # convert to mm
-				
-				indicators <- matrix(as.numeric(unlist(strsplit(FRSHTT,""))),byrow=TRUE, ncol=6)
-				colnames(indicators) <- c("ifog","irain","isnow","ihail","ithunder","itornado") 
-				gsod <- cbind(gsod, indicators, stringsAsFactors=FALSE)
-				result <- new('weather')
-				result@stn <- station
-				# TODO: get from database?
-				#result@lon <- x
-				#result@lat <- y
-				#result@alt <- alt
-				result@w <- gsod
+    # check for RCurl package
+    if(!require(RCurl)){
+		stop("RCurl package not found.")
+	}
+
+    # check for write permissions
+	if(!force.directories(savepath, recursive=TRUE)){
+		stop("Can't create download path.")
+	} 
+
+	sindex <- grep(station, GSOD.stations$stationid)
+    #check if station exists
+    if (length(sindex)!=1){
+        stop("Can't find station ", station,"\nTry updating GSOD stations file.")
+    } 
+	
+	# prepare weather object
+	result <- new("weather")
+	result@stn <- paste(GSOD.stations$STATION.NAME[sindex], " (", station, ")", sep="")
+    result@lon <- GSOD.stations$LON[sindex]
+	result@lat <- GSOD.stations$LAT[sindex]
+	result@alt <- GSOD.stations$ELEV1M[sindex]    
+
+	fname <- paste(station,"-",year,".op.gz", sep="")
+	ftpurl <- paste(GSOD.ftp, year, fname, sep="/")
+	
+	# Download gsod file if necessary
+	if (!file.exists(paste(savepath,fname, sep="/"))){
+		dl <- withRetry(download.file(ftpurl, destfile = paste(savepath, fname, sep = "/"), mode = "wb", quiet = TRUE), ...)				
+	} else if (rm.existing | file.info(paste(savepath, fname, sep="/"))$size==0){
+		# Remove existing downloaded file
+		file.remove(paste(savepath,fname, sep="/"))
+		dl <- withRetry(download.file(ftpurl, destfile = paste(savepath, fname, sep = "/"), mode = "wb", quiet = TRUE), ...)	
+	}
+	
+	gz <- gzfile(paste(savepath,fname,sep="/"))
+	dlines <- readLines(gz)
+	gz <- close(gz)			
+
+	# Parse the gsod file if successfully downloaded
+	if (length(dlines)>0){
+		
+		dat <- vector()
+		#Parsing the GSOD file
+		for (i in 1:14){
+			tmp <- trim(substr(dlines[-1], GSOD.varrefs$stpos[i], GSOD.varrefs$enpos[i]))
+			if(!is.na(GSOD.varrefs$missing[i])) {
+				tmp[tmp==as.character(GSOD.varrefs$missing[i])] <- NA				
 			}
+			dat <- cbind(dat,tmp)
 		}
 		
-	}
+		colnames(dat) <- GSOD.varrefs$variable[1:14]
+		dat <- as.data.frame(dat, stringsAsFactors=FALSE)
+		gsod <- data.frame(tavg=numeric(nrow(dat)),slpressure=numeric(nrow(dat)),stpressure=numeric(nrow(dat)),tdew=numeric(nrow(dat)),visibility=numeric(nrow(dat)),wind=numeric(nrow(dat)),maxwind=numeric(nrow(dat)),gust=numeric(nrow(dat)),tmax=numeric(nrow(dat)),tmin=numeric(nrow(dat)),prec=numeric(nrow(dat)),snowdepth=numeric(nrow(dat)))
+		# CLEAN UP CLIMATE DATA
+		gsod$tavg 		<- round(FtoC(as.numeric(dat$TEMP)),1)*10 # MEAN TEMP
+		gsod$slpressure <- as.numeric(dat$SLP)*10  # SEA LEVEL PRESSURE
+		gsod$stpressure <- as.numeric(dat$STP)*10  # STATION PRESSURE
+		gsod$tdew 		<- round(FtoC(as.numeric(dat$DEWP)),1)*10  # MEAN DEW POINT
+		gsod$visibility <- round((as.numeric(dat$VISIB) * 1.609344),1)*10 # VISIBILITY
+		
+		##############################################
+		# WINDSPEED NEEDED IN ORYZA2k
+		gsod$wind  		<- round(as.numeric(dat$WDSP) * 0.514444444,1)*10 # WIND SPEED
+		gsod$maxwind 	<- round(as.numeric(dat$MXSPD) * 0.514444444,1)*10  # MAX SUSTAINED SPEED
+		gsod$gust  		<- round(as.numeric(dat$GUST) * 0.514444444,1)*10  # MAX GUST
+	  
+		##############################################
+		# MAX T NEEDED IN ORYZA2k
+		gsod$tmax   <- round(FtoC(as.numeric(dat$MAX)),1)*10  # MAX T
+	  
+		##############################################
+		# MIN 2 NEEDED IN ORYZA2k
+		gsod$tmin   <- round(FtoC(as.numeric(dat$MIN)),1)*10  # MIN T
+	
+		##############################################
+		# RAINFALL NEEDED IN ORYZA2k
+		gsod$prec   <- round(as.numeric(dat$PRCP)*100/25.4,1)*10  # RAINFALL
+		
+		##############################################
+		# SNOW DEPTH
+		gsod$snowdepth   <- round(as.numeric(dat$SNDP)*100/25.4,1)*10  # convert to mm
+		
+		indicators <- matrix(as.numeric(unlist(strsplit(dat$FRSHTT,""))),byrow=TRUE, ncol=6)
+		colnames(indicators) <- c("ifog","irain","isnow","ihail","ithunder","itornado") 
+		
+		wdate <- as.Date(dat$YEARMODA,"%Y%m%d")
+		
+		gsod <- cbind(wdate, gsod, indicators, stringsAsFactors=FALSE)
+		# TODO: get from database?
+		result@w <- gsod
+	} else {
+        # result@rmk <- paste("Download failed for", year)  
+		result@rmk <- as.character(dl)  
+    }	
 	return(result)
 }
