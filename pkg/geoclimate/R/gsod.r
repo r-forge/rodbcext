@@ -12,7 +12,10 @@ GSOD.readStations <- function(stationfile=system.file("gsod_stations.csv", packa
     show.message("Reading GSOD station info file.", appendLF=TRUE)					
     stations <- read.csv(stationfile, stringsAsFactors=FALSE)
     if(rm.nodata) stations <- stations[-which(is.na(stations$BEGIN)),]
-    if(rm.nocoords) stations <- stations[-which(stations$LAT==-99999|is.na(stations$LAT)),]
+    if(rm.nocoords) {
+		stations <- stations[-which(stations$LAT==-99999|is.na(stations$LAT)),]
+		stations <- stations[-which(stations$LON==-99999|is.na(stations$LON)),]
+	}
     stationid <- paste(sprintf("%06d",stations$USAF), sprintf("%05d", stations$WBAN), sep="-")
     stations <- cbind(stationid,stations, stringsAsFactors=FALSE)
     
