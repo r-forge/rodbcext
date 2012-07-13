@@ -1,10 +1,10 @@
 Package: geoclimate
 Type: Package
 Title: Climate and Weather Data Processing at the IRRI GIS Laboratory
-Version: 0.0.7
+Version: 0.0.10
 Date: 2009-2-24
 Depends: methods, genutils, weather
-Suggests: RODBC, ncdf, RCurl
+Suggests: RODBC, RCurl
 Author: Jorrel Khalil S. Aunario
 Maintainer: <jaunario@gmail.com>
 Description: [description]

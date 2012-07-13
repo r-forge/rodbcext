@@ -49,7 +49,23 @@ upload.gsod <- function(dbasecon, gsod, setname="gsod_xd"){
 	success <- .upload(dbasecon, igsod, tablename=setname)
     
 	return(success)    
-}   
+} 
+
+upload.trmm <- function(dbasecon, trmm, setname="trmm_15m"){
+	# TODO: support transaction
+    success <- FALSE
+
+	if (class(trmm)!="weather"){
+		stop("Invalid gsod input. Should be class 'weather'")
+	} 
+	
+	#igsod <- cbind(as.numeric(gsod@stn), gsod@w)
+	#colnames(igsod) <- c('station_id', colnames(gsod@w))
+	success <- .upload(dbasecon, trmm@w, tablename=setname)
+    
+	return(success)    
+
+}  
 
 upload.FSE <- function(dbasecon, clim, setname, stations=NA, has.AIid=FALSE){
 	add <- success <- FALSE

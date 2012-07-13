@@ -2,41 +2,73 @@
 # Date :  20 February 2012
 # Version 0.0.2
 # Licence GPL v3
+TRMM.ftp <- "ftp://disc2.nascom.nasa.gov/data/TRMM/Gridded/Derived_Products"
 
+get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=FALSE,...){
+	if(!require(RCurl)) stop("package RCurl not found.")
+	
+	if (!is.na(savepath)) force.directories(savepath, recursive=TRUE)
+	versions <- c("3B42_V6", "3B42_V7", "3B42RT")
+	
+	ip <- grep(ver, versions, ignore.case=TRUE)
+	if (is.na(ip) | length(ip)>1){
+		stop("Invalid version. Should be v6, v7 or rt.")
+	} else {
+		product <- ifelse(toupper(ver) %in% c("V6", "V7"), paste("3B42_",toupper(ver), sep=""),paste("3B42", toupper(ver), sep=""))
+	}
 
-get.trmm <- function(wdate="1998-1-1", savepath=getwd(), rm.existing=FALSE){
-    if (!require(ncdf)) stop("Package ncdf not found.")
-    result <- vector()
 	wdate <- as.Date(wdate)
-	if(wdate < as.Date("1998-1-1")){
-		show.message("Date ", wdate," is earlier than start of TRMM data. Using 1998-1-1 instead.", appendLF=TRUE)
-		wdate <- as.Date("1998-1-1")
+	if ((ip==3) & (wdate < as.Date("2008-10-1"))){
+		stop("Date ", wdate," is earlier than start of specified version. ", versions[ip], " started 2008-10-1.")
+		#wdate <- as.Date("1998-1-1")
+	} else if (wdate < as.Date("1998-1-1")){
+		show.message("Date ", wdate," is earlier than start of specified version. ", versions[ip], " started 1998-1-1.")
+		#wdate <- as.Date("1998-1-1")
 	}
 	
-	if (!force.directories(savepath, recursive=TRUE)){
-		show.message("Error: Cannot create ", savepath, ".", appendLF=TRUE)
+	switch(ip,
+	{ 	fname <- paste("3B42_daily.", format(wdate, "%Y.%m.%d"),".6.bin",sep="" )
+		prod.ftp <- paste(TRMM.ftp, product, "Daily", yearFromDate(wdate), fname,sep="/")
+		},
+	{ 	fname <- paste("3B42_daily.", format(wdate, "%Y.%m.%d"),".7.bin",sep="" )
+		prod.ftp <- paste(TRMM.ftp, product, "Daily", yearFromDate(wdate), fname,sep="/")
+		},
+	{ 	fname <- paste("3B42RT_daily.", format(wdate, "%Y.%m.%d"),".bin",sep="" )
+		prod.ftp <- paste(TRMM.ftp, product, "Daily", yearFromDate(wdate), fname,sep="/")
+		}
+	)
+    
+	if (file.exists(paste(savepath,fname,sep="/")) & rm.existing){
+		file.remove(paste(savepath,fname,sep="/"))
+		rawtrmm <- withRetry(getBinaryURL(prod.ftp),...)
+	} else if (file.exists(paste(savepath,fname,sep="/"))){
+		rawtrmm <- getBinaryURL(paste("file://localhost", normalizePath(savepath, winslash="/"), fname, sep="/"))		
 	} else {
-	    prevday <- wdate-1
-		fname <- paste("3B42_daily.",format(wdate, "%Y.%m.%d"),".6.nc", sep="") 
-		src <- paste("http://disc3.nascom.nasa.gov/daac-bin/OTF/HTTP_services.cgi?FILENAME=%2Fftp%2Fdata%2Fs4pa%2FTRMM_L3%2FTRMM_3B42_daily%2F",format(prevday, "%Y"),"%2F",format(prevday,"%j"),"%2F3B42_daily.",format(wdate, "%Y.%m.%d"),".6.bin&LABEL=3B42_daily.",format(wdate, "%Y.%m.%d"),".6.nc&SHORTNAME=TRMM_3B42_daily&SERVICE=HDF_TO_NetCDF&VERSION=1.02",sep="")
-		outfile <- paste(savepath, fname, sep="/")
-		if (!file.exists(outfile)){
-			withRetry(download.file(src, outfile, method="internal", mode="wb"))    
-		} else if (rm.existing | file.info(outfile)$size<2321368){
-			file.remove(outfile)
-			withRetry(download.file(src, outfile, method="internal", mode="wb"))
-		}
-		
-		traster <- try(raster(outfile),silent=TRUE)    
-		if(class(traster)!="try-error"){
-			xy <- xyFromCell(traster,1:ncell(traster))
-			prec <- values(traster)
-			result <- cbind(xy,prec)
-		} else {
-			show.message(traster, appendLF=TRUE)
-		}
+		rawtrmm <- withRetry(getBinaryURL(prod.ftp),...)
 	}
-	return(result)
+	if (class(rawtrmm)!="try-error") stop(rawtrmm)
+	
+	if (class(savepath)=="character") writeBin(rawtrmm, paste(savepath,fname,sep="/"))
+	
+	baseraster <- raster(extent(-180,180,-50,50))
+	res(baseraster) <- 0.25
+	
+	prec <- matrix(readBin(rawtrmm, double(), endian="big", size=4, n=ncell(baseraster)), ncol=ncol(baseraster), nrow=nrow(baseraster), byrow=TRUE)
+	prec[prec==min(prec)] <- NA
+	prec <- prec[nrow(prec):1,]
+	
+	baseraster[] <- prec
+	prec <- values(baseraster)
+	cell <- 1:ncell(baseraster)
+	wth <- new("weather")
+	wth@stn <- "Tropical Rainfall Measuring Mission"
+    wth@rmk <- prod.ftp
+	wth@lon <- c(-180,180)
+	wth@lat <- c(-50,50)
+	wth@w <- as.data.frame(prec)
+	wth@w <- cbind(cell,wdate,wth@w)
+	
+	return(wth)
 }
 
 trmm.monthly <- function(month=1,year=1998, savepath=getwd(), rm.old=FALSE){

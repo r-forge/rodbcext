@@ -83,3 +83,7 @@ read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 	}
 	return(fsewth)
 }
+
+write.fse <- function(wth, filename="",...){
+	 
+}
