@@ -48,7 +48,7 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 	}
 	if (class(rawtrmm)=="try-error") stop(rawtrmm)
 	
-	if (class(savepath)=="character" & rm.existing) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
+	if (class(savepath)=="character" & file.exists(paste(savepath,fname,sep="/"))) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
 	
 	baseraster <- raster(extent(-180,180,-50,50))
 	res(baseraster) <- 0.25
