@@ -42,7 +42,7 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 		file.remove(paste(savepath,fname,sep="/"))
 		rawtrmm <- withRetry(getBinaryURL(prod.ftp),...)
 	} else if (file.exists(paste(savepath,fname,sep="/"))){
-		rawtrmm <- getBinaryURL(paste("file://localhost", normalizePath(savepath, winslash="/"), fname, sep="/"))		
+		rawtrmm <- getBinaryURL(paste("file://localhost", normalizePath(savepath), fname, sep="/"))		
 	} else {
 		rawtrmm <- withRetry(getBinaryURL(prod.ftp),...)
 	}
