@@ -42,13 +42,13 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 		file.remove(paste(savepath,fname,sep="/"))
 		rawtrmm <- withRetry(getBinaryURL(prod.ftp),...)
 	} else if (file.exists(paste(savepath,fname,sep="/"))){
-		rawtrmm <- getBinaryURL(paste("file://localhost", normalizePath(savepath), fname, sep="/"))		
+		rawtrmm <- getBinaryURL(paste("file://localhost", normalizePath(savepath), fname, sep="/"))			
 	} else {
 		rawtrmm <- withRetry(getBinaryURL(prod.ftp),...)
 	}
-	if (class(rawtrmm)!="try-error") stop(rawtrmm)
+	if (class(rawtrmm)=="try-error") stop(rawtrmm)
 	
-	if (class(savepath)=="character") writeBin(rawtrmm, paste(savepath,fname,sep="/"))
+	if (class(savepath)=="character" & rm.existing) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
 	
 	baseraster <- raster(extent(-180,180,-50,50))
 	res(baseraster) <- 0.25
@@ -58,16 +58,17 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 	prec <- prec[nrow(prec):1,]
 	
 	baseraster[] <- prec
-	prec <- values(baseraster)
 	cell <- 1:ncell(baseraster)
 	wth <- new("weather")
 	wth@stn <- "Tropical Rainfall Measuring Mission"
     wth@rmk <- prod.ftp
 	wth@lon <- c(-180,180)
 	wth@lat <- c(-50,50)
-	wth@w <- as.data.frame(prec)
-	wth@w <- cbind(cell,wdate,wth@w)
-	
+	wth@w <- as.data.frame(cell)
+	wth@w$wdate <- wdate
+	wth@w$prec <- values(baseraster)
+	rm(baseraster, prec, cell)
+	gc(verbose=FALSE)
 	return(wth)
 }
 
