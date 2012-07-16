@@ -48,7 +48,7 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 	}
 	if (class(rawtrmm)=="try-error") stop(rawtrmm)
 	
-	if (class(savepath)=="character" & file.exists(paste(savepath,fname,sep="/"))) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
+	if (class(savepath)=="character" & !file.exists(paste(savepath,fname,sep="/"))) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
 	
 	baseraster <- raster(extent(-180,180,-50,50))
 	res(baseraster) <- 0.25
@@ -65,7 +65,7 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 	wth@lon <- c(-180,180)
 	wth@lat <- c(-50,50)
 	wth@w <- as.data.frame(cell)
-	wth@w$wdate <- wdate
+	wth@w$wdate <- as.character(wdate)
 	wth@w$prec <- values(baseraster)
 	rm(baseraster, prec, cell)
 	gc(verbose=FALSE)
