@@ -6,9 +6,9 @@ SM.new    <- 0
 SM.update <- 1
 SM.append <- 2
 
-.upload <- function(con, wthdframe, tablename, savemode=SM.append){
+.upload <- function(con, wthdframe, tablename, savemode=SM.append,...){
 	
-	proc <- try(sqlSave(con, wthdframe, tablename, rownames=FALSE, append=TRUE))
+	proc <- try(sqlSave(con, wthdframe, tablename, rownames=FALSE, append=TRUE,...))
 	success <- class(proc)!="try-error"
 	if(!success) show.message(proc, appendLF=TRUE)
 	#TODO: support transaction
@@ -22,6 +22,18 @@ SM.append <- 2
 	return(success)
 }
 
+upload.weather <- function(con, wth, setname,...){
+	# TODO: support transaction
+    success <- FALSE
+
+	if (class(wth)!="weather"){
+		stop("Invalid wth input. Should be class 'weather'")
+	} 
+	
+	success <- .upload(con, wth@w, tablename=setname,...)
+    return(success)    
+}
+
 upload.nasa <- function(dbasecon, nasa, setname='nasa_1d'){
 	# TODO: support transaction
     success <- FALSE
@@ -30,8 +42,8 @@ upload.nasa <- function(dbasecon, nasa, setname='nasa_1d'){
 		stop("Invalid nasa input. Should be class 'weather'")
 	} 
 	
-	inasa <- cbind(0,as.numeric(nasa@stn), nasa@w)
-	colnames(inasa) <- c('id','cell', colnames(nasa@w))
+	inasa <- cbind(as.numeric(nasa@stn), nasa@w)
+	colnames(inasa) <- c('cell', colnames(nasa@w))
 	success <- .upload(dbasecon, inasa, tablename=setname)
     return(success)    
 }
