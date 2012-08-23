@@ -4,7 +4,7 @@ Title: Climate and Weather Data Processing at the IRRI GIS Laboratory
 Version: 0.0.11
 Date: 2009-2-24
 Depends: methods, genutils, weather
-Suggests: RODBC, RCurl
+Suggests: RODBC, RCurl, ncdf
 Author: Jorrel Khalil S. Aunario
 Maintainer: <jaunario@gmail.com>
 Description: [description]

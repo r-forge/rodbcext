@@ -152,11 +152,11 @@ get.gsod <- function(station, year=as.numeric(format(Sys.Date(),"%Y")), savepath
 	
 		##############################################
 		# RAINFALL NEEDED IN ORYZA2k
-		gsod$prec   <- round(as.numeric(dat$PRCP)*100/25.4,1)*10  # RAINFALL
+		gsod$prec   <- round(as.numeric(dat$PRCP)*25.4,1)*10  # RAINFALL
 		
 		##############################################
 		# SNOW DEPTH
-		gsod$snowdepth   <- round(as.numeric(dat$SNDP)*100/25.4,1)*10  # convert to mm
+		gsod$snowdepth   <- round(as.numeric(dat$SNDP)*25.4,1)*10  # convert to mm
 		
 		indicators <- matrix(as.numeric(unlist(strsplit(dat$FRSHTT,""))),byrow=TRUE, ncol=6)
 		colnames(indicators) <- c("ifog","irain","isnow","ihail","ithunder","itornado") 
