@@ -46,29 +46,37 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 	} else {
 		rawtrmm <- withRetry(getBinaryURL(prod.ftp),...)
 	}
-	if (class(rawtrmm)=="try-error") stop(rawtrmm)
 	
-	if (class(savepath)=="character" & !file.exists(paste(savepath,fname,sep="/"))) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
-	
-	baseraster <- raster(extent(-180,180,-50,50))
-	res(baseraster) <- 0.25
-	
-	prec <- matrix(readBin(rawtrmm, double(), endian="big", size=4, n=ncell(baseraster)), ncol=ncol(baseraster), nrow=nrow(baseraster), byrow=TRUE)
-	prec[prec==min(prec)] <- NA
-	prec <- prec[nrow(prec):1,]
-	
-	baseraster[] <- prec
-	cell <- 1:ncell(baseraster)
 	wth <- new("weather")
 	wth@stn <- "Tropical Rainfall Measuring Mission"
-    wth@rmk <- prod.ftp
 	wth@lon <- c(-180,180)
 	wth@lat <- c(-50,50)
-	wth@w <- as.data.frame(cell)
-	wth@w$wdate <- as.character(wdate)
-	wth@w$prec <- values(baseraster)
-	rm(baseraster, prec, cell)
-	gc(verbose=FALSE)
+	
+	if (class(rawtrmm)=="try-error") {
+		wth@rmk <- c(prod.ftp,rawtrmm)
+		wth@w <- data.frame(cell=numeric(0), wdate=character(0), prec=numeric(0), stringsAsFactors=FALSE)
+		warning(rawtrmm)
+	} else {
+		if (class(savepath)=="character" & !file.exists(paste(savepath,fname,sep="/"))) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
+		
+		wth@rmk <- prod.ftp
+		
+		prec <- matrix(readBin(rawtrmm, double(), endian="big", size=4, n=ncell(baseraster)), ncol=ncol(baseraster), nrow=nrow(baseraster), byrow=TRUE)
+		prec[prec==min(prec)] <- NA
+		prec <- prec[nrow(prec):1,]
+		
+		baseraster <- raster(extent(-180,180,-50,50))
+		res(baseraster) <- 0.25
+		cell <- 1:ncell(baseraster)		
+		baseraster[] <- prec
+
+		wth@w <- as.data.frame(cell)
+		wth@w$wdate <- as.character(wdate)
+		wth@w$prec <- values(baseraster)
+		rm(baseraster, prec, cell)
+		gc(verbose=FALSE)		
+	}	
+	
 	return(wth)
 }
 
