@@ -61,13 +61,14 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 		
 		wth@rmk <- prod.ftp
 		
+		baseraster <- raster(extent(-180,180,-50,50))
+		res(baseraster) <- 0.25
+		cell <- 1:ncell(baseraster)		
+		
 		prec <- matrix(readBin(rawtrmm, double(), endian="big", size=4, n=ncell(baseraster)), ncol=ncol(baseraster), nrow=nrow(baseraster), byrow=TRUE)
 		prec[prec==min(prec)] <- NA
 		prec <- prec[nrow(prec):1,]
 		
-		baseraster <- raster(extent(-180,180,-50,50))
-		res(baseraster) <- 0.25
-		cell <- 1:ncell(baseraster)		
 		baseraster[] <- prec
 
 		wth@w <- as.data.frame(cell)
