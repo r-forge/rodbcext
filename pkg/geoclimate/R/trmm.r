@@ -60,21 +60,24 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 		if (class(savepath)=="character" & !file.exists(paste(savepath,fname,sep="/"))) writeBin(rawtrmm, paste(savepath,fname,sep="/"))
 		
 		wth@rmk <- prod.ftp
+		trmmraster <- raster(extent(0,360,-50,50))
+		baseraster <- raster()
+		res(trmmraster) <- res(baseraster) <- 0.25
+		txy <- as.data.frame(xyFromCell(trmmraster, 1:ncell(trmmraster)))
+		txy$x[txy$x>180] <- txy$x[txy$x>180]-360
+		cell <- cellFromXY(baseraster, txy)		
 		
-		baseraster <- raster(extent(-180,180,-50,50))
-		res(baseraster) <- 0.25
-		cell <- 1:ncell(baseraster)		
-		
-		prec <- matrix(readBin(rawtrmm, double(), endian="big", size=4, n=ncell(baseraster)), ncol=ncol(baseraster), nrow=nrow(baseraster), byrow=TRUE)
+		prec <- matrix(readBin(rawtrmm, double(), endian="big", size=4, n=ncell(trmmraster)), ncol=ncol(trmmraster), nrow=nrow(trmmraster), byrow=TRUE)
 		prec[prec==min(prec)] <- NA
 		prec <- prec[nrow(prec):1,]
 		
-		baseraster[] <- prec
+		trmmraster[] <- prec
 
 		wth@w <- as.data.frame(cell)
 		wth@w$wdate <- as.character(wdate)
-		wth@w$prec <- values(baseraster)
-		rm(baseraster, prec, cell)
+		wth@w$prec <- values(trmmraster)
+		wth@w <- wth@w[order(cell),]
+		rm(trmmraster, baseraster, prec, cell)
 		gc(verbose=FALSE)		
 	}	
 	
