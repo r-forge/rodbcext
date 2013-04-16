@@ -4,7 +4,7 @@
 # Licence GPL v3
 # Read and Write FSE weather files
 
-read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "tmin", "tmax", "vaporp","wind","prec")){
+read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "tmin", "tmax", "vapr","wind","prec")){
 
 	fsewth <-  new("weather")
 	is.sunshine <- FALSE
@@ -84,6 +84,92 @@ read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 	return(fsewth)
 }
 
-write.fse <- function(wth, filename="",...){
-	 
+
+.toFSEFile <- function(wthdat, country="WORLD", station="", author="Geoclimate (IRRI-GIS Climatic Data Warehouse)", format="csv", comments="", savepath=getwd()){
+	# standard checks
+	if (class(wthdat)!="weather"){
+		stop("Unsupported data format. Should of class \"weather\"")
+	}
+	vars <- c("srad", "tmin", "tmax", "vapr", "wind", "prec")
+	if(sum(vars %in% colnames(wthdat@w))<length(vars)){
+		stop("Incomplete data. ", paste(vars[!vars %in% colnames(wthdat@w)],collapse=", "), " not found.")
+	}
+	
+	#Override Station
+	if (station!="") wthdat@stn <- station	
+	
+	hdrspec <- c(  paste("*  Author      :", author, "   -99.: nil value"),
+			paste("*  Source      :", wthdat@rmk),
+			"*",
+			paste("*  Comments    :", comments))
+	
+	hdrvars <- c(  "*  Column    Daily Value",
+			"*     1      Station number",
+			"*     2      Year",
+			"*     3      Day",
+			"*     4      irradiance         KJ m-2 d-1",
+			"*     5      min temperature            oC",
+			"*     6      max temperature            oC",
+			"*     7      vapor pressure            kPa",
+			"*     8      mean wind speed         m s-1",
+			"*     9      precipitation          mm d-1")
+	
+	hdrstn <- c(paste("*  Station Name: Geoclimate Pixel", wthdat@stn),
+				paste("*  Longitude:  ", sprintf("%.2f", wthdat@lon), "    Latitude:", sprintf("%.2f", wthdat@lat), "    Altitude:  ", wthdat@alt ,"m"))
+	
+	hdrbar <- paste("*", paste(rep("-",max(nchar(c(hdrspec,hdrvars, hdrstn)))), collapse=""),sep="")
+	
+	locstr <- paste(sprintf("%.2f", wthdat@lon), sprintf("%.2f", wthdat@lat),format(sprintf("%.1f", wthdat@alt), width=5), "0.00", "0.00")
+	
+	wthdat@w$year <- as.numeric(format(wthdat@w$wdate, "%Y"))
+	wthdat@w$doy <- as.numeric(format(wthdat@w$wdate, "%j"))
+	
+	
+	
+	if (format=="csv"){
+		dat <- paste(wthdat@stn, wthdat@w$year, wthdat@w$doy, wthdat@w$srad, wthdat@w$tmin, wthdat@w$tmax, wthdat@w$vapr, wthdat@w$wind, wthdat@w$prec, sep=", ")		
+	} else if (format=="fixed"){
+		dat <- paste(wthdat@stn, sprintf("%6.0d", wthdat@w$year), format(wthdat@w$wdate, " %j", width=6), sprintf("%10.0f", wthdat$srad[d]), sprintf("%8.1f", wthdat$tmin[d]), sprintf("%8.1f", wthdat$tmax[d]), sprintf("%8.1f", wthdat$vapr[d]), sprintf("%8.1f", wind), sprintf("%8.1f", wthdat$prec[d]))		
+	} 
+	
+	dat <- gsub("NA", "-99.", dat)
+	
+	years <- unique(wthdat@w$year)	
+	wthstrs <- list()
+	files <- vector()
+	for (yy in years){
+		fname <- paste(savepath, "/", country, wthdat@stn, ".", substr(yy, 2,4),sep="")
+		files <- c(files,fname)
+		writeLines(c(hdrbar,hdrspec,hdrstn,hdrvars,hdrbar,locstr, dat[wthdat@w$year==yy]),fname)
+	}
+	
+	return(files)	
+	
 }
+
+
+if ( !isGeneric("write.fse") ) {
+	setGeneric("write.fse", function(wth, writeto, ...)
+				standardGeneric("write.fse"))
+}
+
+
+setMethod("write.fse", signature(wth="weather", writeto="character"),
+	function(wth, writeto, ...){
+		return(.toFSEFile(wthdat=wth, savepath=writeto, ...))
+	}
+)
+
+setMethod("write.fse", signature(wth="list", writeto="character"),	
+	function(wth, writeto, ...){
+		files <- vector()
+		for (i in 1:length(wth)){
+			if (class(wth[[i]])!="weather") {
+				warning("Class ", class(wth[[i]]), " cannot be written as FSE weather file. Skipped.")				
+			} else {
+				files <- c(files,.toFSEFile(wthdat=wth[[i]], savepath=writeto, ...))				
+			}
+		}			
+		return(files)
+	}
+)
