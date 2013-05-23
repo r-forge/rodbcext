@@ -3,7 +3,7 @@
 # Version 0.0.1
 # Licence GPL v3
 
-get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(), rm.existing=FALSE){
+get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T2MX", "RH2M", "DFP2M","RAIN", "WS10M"),stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(), rm.existing=FALSE){
 	result <- new("weather")
 	src <- ""
 	if(length(x)!=1|length(y)!=1){
@@ -26,7 +26,8 @@ get.nasa <- function(x, y, stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(
 	endate <- as.Date(endate)
 	
 	fname <- paste(paste("nasa",cell,x,y,format(stdate,"%Y.%m.%d"),format(endate,"%Y.%m.%d"), sep="_"), ".txt",sep="")
-	dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=swv_dwn&p=T2M&p=T2MN&p=T2MX&p=RH2M&p=DFP2M&p=RAIN&p=WS10M&submit=Submit", sep="")
+	#dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=swv_dwn&p=T2M&p=T2MN&p=T2MX&p=RH2M&p=DFP2M&p=RAIN&p=WS10M&submit=Submit", sep="")
+	dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=", paste(vars,collapse="&p",sep=""),"&submit=Submit", sep="")
 	
 	show.message("Reading ", appendLF=FALSE)
 	if (!file.exists(paste(savepath, fname, sep="/"))){

@@ -3,7 +3,7 @@
 # Version 0.0.1
 # Licence GPL v3
 
-.fetch <- function(cells, con, wset, stdate=as.Date("2012-1-1"), endate=as.Date("2012-12-31"), vars=NULL, ...){
+.fetch <- function(cells, con, wset, stdate=as.Date("1983-1-1"), endate=Sys.Date(), vars=NULL, ...){
 	#function(cells, con, wset, stdate=Sys.Date()-as.numeric(format(Sys.Date(),"%j"))+1, endate=Sys.Date(), vars=NULL, ...){
 		
 	# Preventive measures for known MySQL-born issues (i.e cannot open table, disconnected RODBC object) 
@@ -18,17 +18,17 @@
 	# parameter vars general checks and query component construction 
 	if (length(vars)>1){
 		invalids <- which(is.na(vars))
-		if (length(invalids)>0) stop ("Invalid vars specification detected.") else vars <- c("cell", "wdate", vars)		
+		if (length(invalids)>0) stop ("Invalid vars specification detected.") else vars <- c("cell", "wdate AS date", vars)		
 	} else if (length(vars)==0){
 		vars <- "*"
 	} else if ((length(vars)==1 & (is.na(vars) | tolower(vars)=="all" | vars=="*"))){
 		vars <- "*"
 	} else {
-		vars <- c("cell", "wdate", vars)
+		vars <- c("cell", "wdate AS date", vars)
 	}
 	
 	vars <- paste(vars, collapse=", ")
-	query <- paste("SELECT", vars, "FROM", wset, "WHERE (wdate BETWEEN", shQuote(stdate), "AND", shQuote(endate),") AND (cell IN (",paste(cells, collapse=", ") ,")) ORDER BY cell, wdate")
+	query <- paste("SELECT", vars, "FROM", wset, "WHERE (wdate BETWEEN", shQuote(stdate), "AND", shQuote(endate),") AND (cell IN (",paste(cells, collapse=", ") ,")) ORDER BY cell, date")
 	
 	data <- sqlQuery(con, query, ...)
 	
@@ -68,21 +68,23 @@ setMethod("geoclimate.fetch", signature(xy="matrix", srcvars="list", connection=
 					tmp <- .fetch(cells=stdcells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]], ...)
 					#tmp <- fetch(cells=cells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]]) 
 					tmp$idx <- match(tmp$cell, stdcells) 
-					tmp <- tmp[,-1]
 					tmp[,srcvars[[i]]] <- tmp[,srcvars[[i]]]/srcm$zval
+					tmp <- tmp[,-grep("cell", colnames(tmp))]
 					
 				} else {
 					warning("Non-grid type dataset not yet supported. Skipping.")
 					# TODO support point type 
 					next
 				}
-				if (!exists("outdat")) outdat <- tmp else outdat <- merge(outdat, tmp, by=c("idx","wdate"), all=TRUE)
+				if (!exists("outdat")) outdat <- tmp else outdat <- merge(outdat, tmp, by=c("idx","date"), all=TRUE)
 			}
 			
 			
 			basegrid <- raster() 
 			res(basegrid) <- maxres			
-			cells <- cellFromXY(basegrid,xy)			
+			cells <- cellFromXY(basegrid,xy)	
+			
+			#Generate Psudo-station ID based on maximumresolution. If resolution <.1 multiply by 3600 (seconds in 1 degree) else multiply by 60 (mins in 1 degree)
 			stn <- ifelse(length(gregexpr("0",unlist(strsplit(as.character(maxres),"\\."))[2])[[1]])>1,maxres*3600,maxres*60) 
 			station <- paste(stn, sprintf(paste("%0",nchar(ncell(basegrid)),"d",sep=""),cells),sep="")
 
@@ -102,7 +104,7 @@ setMethod("geoclimate.fetch", signature(xy="matrix", srcvars="list", connection=
 				wth@lon <- xy[i,1]
 				wth@lat <- xy[i,2]
 				wth@alt <- -99
-				wth@w <- outdat[outdat$idx==i,-1]					 
+				wth@w <- outdat[outdat$idx==i,-(grep("idx", colnames(outdat)))]					 
 				outlist[[i]] <- wth
 			}
 			return(outlist)				
