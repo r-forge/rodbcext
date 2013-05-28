@@ -27,7 +27,7 @@ get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T
 	
 	fname <- paste(paste("nasa",cell,x,y,format(stdate,"%Y.%m.%d"),format(endate,"%Y.%m.%d"), sep="_"), ".txt",sep="")
 	#dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=swv_dwn&p=T2M&p=T2MN&p=T2MX&p=RH2M&p=DFP2M&p=RAIN&p=WS10M&submit=Submit", sep="")
-	dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=", paste(vars,collapse="&p=",sep=""),"&submit=Submit", sep="")
+	dlurl <- paste("http://power.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=", paste(vars,collapse="&p=",sep=""),"&submit=Submit", sep="")
 	
 	show.message("Reading ", appendLF=FALSE)
 	if (!file.exists(paste(savepath, fname, sep="/"))){
@@ -51,10 +51,10 @@ get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T
 		# Check download integrity
 		stline <- grep(paste(format(stdate,"%Y"),format(as.numeric(format(stdate,"%j")),width=3)), dlines)
 		endline <- grep(paste(format(endate,"%Y"),format(as.numeric(format(endate,"%j")),width=3)), dlines)
-		
+		 
 		if (length(stline)!=1|length(endline)!=1){
 			msg <- paste("Incomplete or No data found on file. If file", fname, "is on disk, remove the file then rerun this program.")
-		} else if(length(unlist(strsplit(dlines[endline], "[[:space:]]+")))!=10){
+		} else if(length(unlist(strsplit(dlines[endline], "[[:space:]]+")))!=(length(vars)+2)){
 			msg <- paste("Incomplete download detected. If file", fname, "is on disk, remove the file then rerun this program.")
 		} else {
 			msg <- paste("Read from", src)
@@ -63,10 +63,11 @@ get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T
 			dlines <- dlines[stline:endline]
 			dvector <- unlist(strsplit(dlines, "[[:space:]]+"))
 			dvector[dvector=="-"] <- NA
-			nasadata <- as.data.frame(matrix(as.numeric(dvector), ncol=10, byrow=TRUE))
-			colnames(nasadata) <- c("yr", "doy", "srad", "tavg", "tmin", "tmax", "rh2m", "tdew", "prec", "wind")
-			wdate <- format(as.Date(paste(nasadata$yr,nasadata$doy),"%Y %j"),"%Y-%m-%d")
-			nasadata <- cbind(wdate, nasadata[,-(1:2)], stringsAsFactors=FALSE)
+			nasadata <- as.data.frame(matrix(as.numeric(dvector), ncol=(length(vars)+2), byrow=TRUE))
+			colnames(nasadata) <- c("yr", "doy", vars)
+			
+			date <- format(as.Date(paste(nasadata$yr,nasadata$doy),"%Y %j"),"%Y-%m-%d")
+			nasadata <- cbind(date, nasadata[,-(1:2)], stringsAsFactors=FALSE)
 			
 			result@alt <- alt
 			result@w <- nasadata

@@ -7,8 +7,7 @@ SM.update <- 1
 SM.append <- 2
 
 .upload <- function(con, wthdframe, tablename, savemode=SM.append,...){
-	
-	proc <- try(sqlSave(con, wthdframe, tablename, rownames=FALSE, append=TRUE,...))
+	proc <- try(sqlSave(con, wthdframe, tablename, rownames=FALSE, append=(savemode==SM.append),...))
 	success <- class(proc)!="try-error"
 	if(!success) show.message(proc, appendLF=TRUE)
 	#TODO: support transaction
@@ -34,17 +33,23 @@ upload.weather <- function(con, wth, setname,...){
     return(success)    
 }
 
-upload.nasa <- function(dbasecon, nasa, setname='nasa_1d'){
+upload.nasa <- function(dbasecon, nasa, cols=c("wdate","toa_dwn", "srad", "lwv_dwn", "tavg", "tmin", "tmax", "rh2m", "tdew", "prec", "wind"), setname='nasa_1d'){
 	# TODO: support transaction
     success <- FALSE
-
+	
 	if (class(nasa)!="weather"){
 		stop("Invalid nasa input. Should be class 'weather'")
 	} 
 	
-	inasa <- cbind(as.numeric(nasa@stn), nasa@w)
-	colnames(inasa) <- c('cell', colnames(nasa@w))
-	success <- .upload(dbasecon, inasa, tablename=setname)
+	#check colnames
+	cols <- c("cell", cols)
+	fields <- sqlColumns(dbasecon, setname)$COLUMN_NAME
+	if(length(fields)!=length(cols)) stop("Number of variables of data to be uploaded doesn't match target table ", setname)
+	if(sum(fields==cols)!=length(fields)) stop("Column names of data to be uploaded doesn't match target table ", setname)
+	
+	nasa@w <- cbind(as.numeric(nasa@stn), nasa@w)
+	colnames(nasa@w) <- cols
+	success <- .upload(con=dbasecon, wthdframe=nasa@w, tablename=setname)
     return(success)    
 }
 
