@@ -42,13 +42,13 @@ if ( !isGeneric("geoclimate.fetch") ) {
 
 
 setMethod("geoclimate.fetch", signature(xy="matrix", srcvars="list", connection="RODBC"),
-		function(xy, srcvars, connection, ...){
+		function(xy, srcvars, connection, warehouse="geowarehouse",...){
 			
 			# Connect to database
 			#connection <- odbcConnect(connection)
 			
 			# Get dataset meta data for location matching
-			srcmeta <- sqlQuery(connection,paste("SELECT * FROM geowarehouse.climate_data WHERE table_name in (", paste(shQuote(unique(names(srcvars))),collapse=", "),")"), stringsAsFactors=FALSE)
+			srcmeta <- sqlQuery(connection,paste("SELECT * FROM ", warehouse,".climate_data WHERE table_name in (", paste(shQuote(unique(names(srcvars))),collapse=", "),")", sep=""), stringsAsFactors=FALSE)
 			maxres <- NA
 			for (i in 1:length(srcvars)){
 				srcm <- srcmeta[srcmeta$table_name==names(srcvars)[i],]				
@@ -66,7 +66,7 @@ setMethod("geoclimate.fetch", signature(xy="matrix", srcvars="list", connection=
 					
 					stdcells <- cellFromXY(baseraster,xy)
 					tmp <- .fetch(cells=stdcells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]], ...)
-					#tmp <- fetch(cells=cells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]]) 
+				    #tmp <- fetch(cells=stdcells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]]) 
 					tmp$idx <- match(tmp$cell, stdcells) 
 					tmp[,srcvars[[i]]] <- tmp[,srcvars[[i]]]/srcm$zval
 					tmp <- tmp[,-grep("cell", colnames(tmp))]

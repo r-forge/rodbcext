@@ -49,7 +49,7 @@ upload.nasa <- function(dbasecon, nasa, cols=c("wdate","toa_dwn", "srad", "lwv_d
 	
 	nasa@w <- cbind(as.numeric(nasa@stn), nasa@w)
 	colnames(nasa@w) <- cols
-	success <- .upload(con=dbasecon, wthdframe=nasa@w, tablename=setname)
+	success <- .upload(con=dbasecon, wthdframe=nasa@w[,fields], tablename=setname)
     return(success)    
 }
 
