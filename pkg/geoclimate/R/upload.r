@@ -22,8 +22,8 @@ SM.append <- 2
 }
 
 upload.weather <- function(con, wth, setname,...){
-	# TODO: support transaction
-    success <- FALSE
+	
+	success <- FALSE
 
 	if (class(wth)!="weather"){
 		stop("Invalid wth input. Should be class 'weather'")
@@ -34,8 +34,8 @@ upload.weather <- function(con, wth, setname,...){
 }
 
 upload.nasa <- function(dbasecon, nasa, cols=c("wdate","toa_dwn", "srad", "lwv_dwn", "tavg", "tmin", "tmax", "rh2m", "tdew", "prec", "wind"), setname='nasa_1d'){
-	# TODO: support transaction
-    success <- FALSE
+	
+	success <- FALSE
 	
 	if (class(nasa)!="weather"){
 		stop("Invalid nasa input. Should be class 'weather'")
@@ -54,8 +54,8 @@ upload.nasa <- function(dbasecon, nasa, cols=c("wdate","toa_dwn", "srad", "lwv_d
 }
 
 upload.gsod <- function(dbasecon, gsod, setname="gsod_xd"){    
-	# TODO: support transaction
-    success <- FALSE
+	
+	success <- FALSE
 
 	if (class(gsod)!="weather"){
 		stop("Invalid gsod input. Should be class 'weather'")
@@ -69,8 +69,8 @@ upload.gsod <- function(dbasecon, gsod, setname="gsod_xd"){
 } 
 
 upload.trmm <- function(dbasecon, trmm, setname="trmm_15m"){
-	# TODO: support transaction
-    success <- FALSE
+	
+	success <- FALSE
 
 	if (class(trmm)!="weather"){
 		stop("Invalid gsod input. Should be class 'weather'")
@@ -84,7 +84,7 @@ upload.trmm <- function(dbasecon, trmm, setname="trmm_15m"){
 
 }  
 
-upload.FSE <- function(dbasecon, clim, setname, stations=NA, has.AIid=FALSE){
+upload.fse <- function(dbasecon, clim, setname, stations=NA, has.AIid=FALSE){
 	add <- success <- FALSE
 	
 		

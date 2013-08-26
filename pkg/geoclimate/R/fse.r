@@ -4,7 +4,7 @@
 # Licence GPL v3
 # Read and Write FSE weather files
 
-read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "tmin", "tmax", "vapr","wind","prec")){
+read.fse <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "tmin", "tmax", "vapr","wind","prec"), delim=" ", skip.hdr=FALSE){
 
 	fsewth <-  new("weather")
 	is.sunshine <- FALSE
@@ -13,37 +13,43 @@ read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 	if(file.exists(fsefile) & file.info(fsefile)$size!=0){
 		
 		dlines <- readLines(fsefile)
-		dlines <- gsub("\t", " ", dlines)
+		dlines <- gsub("\t", delim, dlines)
+		
 		# get headers
 		ihdr <- grep("\\*", dlines)
-		hdr <- gsub("\\*", " ", dlines[min(ihdr):max(ihdr)])
-		hdr <- trim(gsub("\\?", " ", hdr))
-		hdr <- hdr[hdr!=""]
-		
-		icol <- grep("1[[:space:]]+Station", hdr, ignore.case=TRUE)
-		if (length(grep("--", hdr))>0){
-			colinfo <- hdr[icol:(length(hdr)-1)]
-		} else{
-			colinfo <- hdr[icol:length(hdr)]
+
+		if(!skip.hdr){
+			hdr <- gsub("\\*", " ", dlines[min(ihdr):max(ihdr)])
+			hdr <- trim(gsub("\\?", " ", hdr))
+			hdr <- hdr[hdr!=""]
+			
+			icol <- grep("1[[:space:]]+Station", hdr, ignore.case=TRUE)
+			if (length(icol)>1 & length(grep("--", hdr))>0){
+				colinfo <- hdr[icol:(length(hdr)-1)]
+			} else {
+				colinfo <- hdr[icol:length(hdr)]
+			}
+			hdr <- hdr[1:(icol-1)]
+			
+			# get station name
+			i <- grep("station", hdr, ignore.case=TRUE)
+			if (length(i)==0) {
+				i <- grep("location", hdr, ignore.case=TRUE)
+			} 
+			fsewth@stn <- ifelse(!is.na(i[1]), trim(gsub("\\*", "", unlist(strsplit(hdr[i],":"))[2])),"Unknown")
+			
+			# get source
+			i <- grep("source", hdr, ignore.case=TRUE)
+			fsewth@rmk <- ifelse(length(i)==1, trim(unlist(strsplit(hdr[i],":"))[2]),"")
+			
+			# get station name
+			#i <- grep("source", hdr, ignore.case=TRUE)
+			#fsewth@rmk <- ifelse(length(i)==1, trim(unlist(strsplit(dlines[i],":"))[2]),"")			
 		}
-		hdr <- hdr[1:(icol-1)]
-		# get station name
-		i <- grep("station", hdr, ignore.case=TRUE)
-		if (length(i)==0) {
-			i <- grep("location", hdr, ignore.case=TRUE)
-		} 
-		fsewth@stn <- ifelse(!is.na(i[1]), trim(gsub("\\*", "", unlist(strsplit(hdr[i],":"))[2])),"Unknown")
-		
-		# get source
-		i <- grep("source", hdr, ignore.case=TRUE)
-		fsewth@rmk <- ifelse(length(i)==1, trim(unlist(strsplit(hdr[i],":"))[2]),"")
-		
-		# get station name
-		#i <- grep("source", hdr, ignore.case=TRUE)
-		#fsewth@rmk <- ifelse(length(i)==1, trim(unlist(strsplit(dlines[i],":"))[2]),"")
+			
 		
 		# get coordinates
-		coords <- as.numeric(unlist(strsplit(trim(dlines[max(ihdr)+1]),"[[:space:]]+")))
+		coords <- as.numeric(unlist(strsplit(trim(dlines[max(ihdr)+1]),delim)))
 		rm(dlines)
 		gc(verbose=FALSE)
 		
@@ -55,23 +61,25 @@ read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 		#dmatrix[dmatrix==-9999] <- NA
 		#dmatrix <- as.data.frame(dmatrix)
 		
-		dmatrix <- read.table(fsefile, skip=max(ihdr)+1, na.strings="-9999", stringsAsFactors=FALSE)
+		dmatrix <- read.table(fsefile, skip=max(ihdr)+1, stringsAsFactors=FALSE, sep=delim)
 		colnames(dmatrix) <- datacols
 				
-		# CHECK RADIATION UNITS THEN CONVERT TO MEGAJOULE/SQM/DAY IF NECESSARY
-		
-		# Check if sunshine hours/duration
-		rad_var <- grep("sunshine[[:print:]]*", tolower(colinfo), ignore.case=TRUE)		
-		if (length(rad_var)!=0){
-			dmatrix[,rad_var] <- round(sunhoursToSRad(dmatrix[,rad_var],dmatrix[,3],fsewth@lat, coords[4], coords[5]),2)
-			show.message("Sunshine duration", appendLF=TRUE)
+		if(!skip.hdr){
+			# CHECK RADIATION UNITS THEN CONVERT TO MEGAJOULE/SQM/DAY IF NECESSARY
 			
-		} else {
-			rad_var <- grep("[[:print:]]*rad[[:print:]]*", tolower(colinfo), ignore.case=TRUE)
-			if(length(rad_var)!=0 & grepl("kj", colinfo[rad_var],ignore.case=TRUE)) {
-				dmatrix[,rad_var] <- round(dmatrix[,rad_var]/1000,2)
-			} 
-
+			# Check if sunshine hours/duration
+			rad_var <- grep("sunshine[[:print:]]*", tolower(colinfo), ignore.case=TRUE)		
+			if (length(rad_var)!=0){
+				dmatrix[,rad_var] <- round(sunhoursToSRad(dmatrix[,rad_var],dmatrix[,3],fsewth@lat, coords[4], coords[5]),2)
+				show.message("Sunshine duration", appendLF=TRUE)
+				
+			} else {
+				rad_var <- grep("[[:print:]]*rad[[:print:]]*", tolower(colinfo), ignore.case=TRUE)
+				if(length(rad_var)!=0 & grepl("kj", colinfo[rad_var],ignore.case=TRUE)) {
+					dmatrix[,rad_var] <- round(dmatrix[,rad_var]/1000,2)
+				} 
+				
+			}			
 		}
 		
 		wdate <- dateFromDoy(dmatrix[,"doy"],dmatrix[,"year"])
@@ -85,7 +93,7 @@ read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 }
 
 
-.toFSEFile <- function(wthdat, country="WORLD", station="", author="Geoclimate (IRRI-GIS Climatic Data Warehouse)", format="csv", comments="", savepath=getwd()){
+.toFSEFile <- function(wthdat, country="WORLD", station="", author="Geoclimate (IRRI-GIS Climate Data Package)", format="csv", comments="", savepath=getwd()){
 	# standard checks
 	if (class(wthdat)!="weather"){
 		stop("Unsupported data format. Should of class \"weather\"")
@@ -119,16 +127,16 @@ read.FSE <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 	
 	hdrbar <- paste("*", paste(rep("-",max(nchar(c(hdrspec,hdrvars, hdrstn)))), collapse=""),sep="")
 	
-	locstr <- paste(sprintf("%.2f", wthdat@lon), sprintf("%.2f", wthdat@lat),format(sprintf("%.1f", wthdat@alt), width=5), "0.00", "0.00")
-	
 	wthdat@w$year <- as.numeric(format(wthdat@w$wdate, "%Y"))
 	wthdat@w$doy <- as.numeric(format(wthdat@w$wdate, "%j"))
 	
 	
 	
 	if (format=="csv"){
+		locstr <- paste(sprintf("%.2f", wthdat@lon), sprintf("%.2f", wthdat@lat),format(sprintf("%.1f", wthdat@alt), width=5), "0.00", "0.00", sep=", ")
 		dat <- paste(wthdat@stn, wthdat@w$year, wthdat@w$doy, wthdat@w$srad, wthdat@w$tmin, wthdat@w$tmax, wthdat@w$vapr, wthdat@w$wind, wthdat@w$prec, sep=", ")		
 	} else if (format=="fixed"){
+		locstr <- paste(sprintf("%.2f", wthdat@lon), sprintf("%.2f", wthdat@lat),format(sprintf("%.1f", wthdat@alt), width=5), "0.00", "0.00")
 		dat <- paste(wthdat@stn, sprintf("%6.0d", wthdat@w$year), format(wthdat@w$wdate, " %j", width=6), sprintf("%10.0f", wthdat$srad[d]), sprintf("%8.1f", wthdat$tmin[d]), sprintf("%8.1f", wthdat$tmax[d]), sprintf("%8.1f", wthdat$vapr[d]), sprintf("%8.1f", wind), sprintf("%8.1f", wthdat$prec[d]))		
 	} 
 	

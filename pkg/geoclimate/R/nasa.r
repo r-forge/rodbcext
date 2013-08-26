@@ -4,6 +4,9 @@
 # Licence GPL v3
 
 get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T2MX", "RH2M", "DFP2M","RAIN", "WS10M"),stdate="1983-1-1", endate=Sys.Date(), savepath=getwd(), rm.existing=FALSE){
+	if(!require(RCurl)){
+		stop("Package RCurl not found.")
+	}
 	result <- new("weather")
 	src <- ""
 	if(length(x)!=1|length(y)!=1){
@@ -27,17 +30,19 @@ get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T
 	
 	fname <- paste(paste("nasa",cell,x,y,format(stdate,"%Y.%m.%d"),format(endate,"%Y.%m.%d"), sep="_"), ".txt",sep="")
 	#dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=swv_dwn&p=T2M&p=T2MN&p=T2MX&p=RH2M&p=DFP2M&p=RAIN&p=WS10M&submit=Submit", sep="")
-	dlurl <- paste("http://power.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=", paste(vars,collapse="&p=",sep=""),"&submit=Submit", sep="")
+	dlurl <- paste("http://power.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",monthFromDate(stdate),"&ds=",dayFromDate(stdate),"&ys=",yearFromDate(stdate),"&me=",monthFromDate(endate),"&de=",dayFromDate(endate),"&ye=",yearFromDate(endate),"&p=", paste(vars,collapse="&p=",sep=""),"&submit=Submit", sep="")
 	
 	show.message("Reading ", appendLF=FALSE)
 	if (!file.exists(paste(savepath, fname, sep="/"))){
 		show.message(dlurl, appendLF=TRUE)
-		dlines <- withRetry(readLines(dlurl))		
+		dlines <- unlist(strsplit(getURL(url=dlurl), "\n"))
+		if(!is.null(savepath)) writeLines(dlines, paste(savepath, fname, sep="/"))
 		src <- dlurl		
 	} else if (rm.existing | file.info(paste(savepath, fname, sep="/"))$size==0){
-		file.remove(paste(savepath, fname, sep="/"))
 		show.message(dlurl, appendLF=TRUE)
-		dlines <- withRetry(readLines(dlurl))
+		file.remove(paste(savepath, fname, sep="/"))
+		dlines <- unlist(strsplit(getURL(url=dlurl), "\n"))
+		writeLines(dlines, paste(savepath, fname, sep="/"))
 		src <- dlurl
 	} else {
 		show.message(paste(savepath, fname, sep="/"), appendLF=TRUE)
@@ -80,3 +85,5 @@ get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T
 	return(result)
 }
  
+#get.nasa(-179.5, 89.5)
+
