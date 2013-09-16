@@ -6,6 +6,6 @@ Date: 2011-10-19
 Depends: methods
 Author: Jorrel Khalil S. Aunario
 Maintainer: <jaunario@gmail.com>
-Description: [description]
+Description: General Utilities (genutils) package is a collection of commonly used basic processes like cleaning, extracting, and formatting data.
 License: GPL (>=2)
 LazyLoad: yes

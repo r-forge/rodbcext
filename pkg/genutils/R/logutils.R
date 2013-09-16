@@ -20,3 +20,7 @@ timer.message <- function(text, time){
     }    
   }
 }
+
+progress.bar <- function(step, width){
+ #TODO	
+}
