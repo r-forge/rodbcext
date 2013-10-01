@@ -39,7 +39,7 @@ GSOD.updateStations <- function(){
 		show.message("Error: RCurl package not found.", appendLF=TRUE)		
 	} else {
 		show.message("Checking file date.", appendLF=TRUE)
-		online <-  unlist(strsplit(getURL("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/"),"\r\n"))
+		online <-  unlist(strsplit(getURL("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/"),ifelse(Sys.info()["sysname"]=="Windows","\r\n","\n")))
 		oinfo <- unlist(strsplit(online[grep("ISH-HISTORY.CSV$",online)],"[[:space:]]+"))
 		
 		age <- difftime(as.Date(paste(oinfo[6:7], collapse=" "), "%b %d"),file.info(system.file("gsod_stations.csv", package="geoclimate"))$ctime, units="weeks")
