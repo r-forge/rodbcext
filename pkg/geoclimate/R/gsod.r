@@ -40,13 +40,15 @@ GSOD.updateStations <- function(){
 	} else {
 		show.message("Checking file date.", appendLF=TRUE)
 		online <-  unlist(strsplit(getURL("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/"),"\r\n"))
-		oinfo <- unlist(strsplit(online[grep("ISH-HISTORY.CSV",online)],"[[:space:]]+"))[6:7]
+		oinfo <- unlist(strsplit(online[grep("ISH-HISTORY.CSV$",online)],"[[:space:]]+"))
 		
-		age <- difftime(as.Date(paste(oinfo, collapse=" "), "%b %d"),file.info(system.file("gsod_stations.csv", package="geoclimate"))$ctime, units="weeks")
-		if (age<2){
+		age <- difftime(as.Date(paste(oinfo[6:7], collapse=" "), "%b %d"),file.info(system.file("gsod_stations.csv", package="geoclimate"))$ctime, units="weeks")
+		size <- as.numeric(oinfo[5])-file.info(system.file("gsod_stations.csv", package="geoclimate"))$size
+		if (age<2 | size==0){
 			show.message("GSOD station file is upto date.", appendLF=TRUE)
 			success <- TRUE
 		} else {		
+		
 			if(!file.copy(system.file("gsod_stations.csv", package="geoclimate"),paste(system.file("gsod_stations.csv", package="geoclimate"),".bck",sep=""),overwrite=TRUE)){
 				show.message("Unable to create station data backup file. GSOD update process aborted.", appendLF=TRUE)
 			} else {
