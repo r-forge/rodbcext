@@ -68,7 +68,8 @@ get.trmm <- function(ver="v7", wdate="1998-1-1", savepath=getwd(), rm.existing=F
 		cell <- cellFromXY(baseraster, txy)		
 		
 		prec <- matrix(readBin(rawtrmm, double(), endian="big", size=4, n=ncell(trmmraster)), ncol=ncol(trmmraster), nrow=nrow(trmmraster), byrow=TRUE)
-		prec[prec==min(prec)] <- NA
+		prec[prec<0] <- NA
+		# TODO: review why this was done
 		prec <- prec[nrow(prec):1,]
 		
 		trmmraster[] <- prec
