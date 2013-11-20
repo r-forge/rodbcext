@@ -8,7 +8,7 @@ GSOD.ftp <- "ftp://ftp.ncdc.noaa.gov/pub/data/gsod"
 # Reference to var values for parsing downloaded data
 GSOD.varrefs <- read.csv(system.file("gsod_ref.csv", package="geoclimate"), stringsAsFactors=FALSE)
 
-GSOD.readStations <- function(stationfile=system.file("gsod_stations.csv", package="geoclimate"), rm.nodata=TRUE, rm.nocoords=TRUE){
+GSOD.readStations <- function(stationfile=system.file("gsod_stations.csv", package="geoclimate"), rm.nodata=FALSE, rm.nocoords=TRUE){
     show.message("Reading GSOD station info file.", appendLF=TRUE)					
     stations <- read.csv(stationfile, stringsAsFactors=FALSE)
     if(rm.nodata) stations <- stations[-which(is.na(stations$BEGIN)),]
