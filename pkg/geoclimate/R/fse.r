@@ -4,7 +4,7 @@
 # Licence GPL v3
 # Read and Write FSE weather files
 
-read.fse <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "tmin", "tmax", "vapr","wind","prec"), delim=" ", skip.hdr=FALSE){
+read.fse <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "tmin", "tmax", "vapr","wind","prec"), delim=" ", skip.hdr=FALSE, std.vals=TRUE){
 
 	fsewth <-  new("weather")
 	is.sunshine <- FALSE
@@ -50,6 +50,8 @@ read.fse <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 		
 		# get coordinates
 		coords <- as.numeric(unlist(strsplit(trim(dlines[max(ihdr)+1]),delim)))
+		coords <- coords[!is.na(coords)]
+		
 		rm(dlines)
 		gc(verbose=FALSE)
 		
@@ -61,10 +63,15 @@ read.fse <- function(fsefile, datacols=c("station_id", "year", "doy", "srad", "t
 		#dmatrix[dmatrix==-9999] <- NA
 		#dmatrix <- as.data.frame(dmatrix)
 		
-		dmatrix <- read.table(fsefile, skip=max(ihdr)+1, stringsAsFactors=FALSE, sep=delim)
+		if(delim==" " | delim==""){
+			dmatrix <- read.table(fsefile, skip=max(ihdr)+1, stringsAsFactors=FALSE)	
+		} else {
+			dmatrix <- read.table(fsefile, skip=max(ihdr)+1, stringsAsFactors=FALSE, sep=delim)
+		}
+		
 		colnames(dmatrix) <- datacols
 				
-		if(!skip.hdr){
+		if(!skip.hdr & std.vals){
 			# CHECK RADIATION UNITS THEN CONVERT TO MEGAJOULE/SQM/DAY IF NECESSARY
 			
 			# Check if sunshine hours/duration
