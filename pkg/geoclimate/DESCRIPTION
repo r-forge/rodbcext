@@ -10,3 +10,5 @@ Maintainer: <jaunario@gmail.com>
 Description: [description]
 License: GPL (>=2)
 LazyLoad: yes
+LazyData: yes
+

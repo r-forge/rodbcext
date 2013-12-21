@@ -6,9 +6,9 @@
 # Current ftp site
 GSOD.ftp <- "ftp://ftp.ncdc.noaa.gov/pub/data/gsod"
 # Reference to var values for parsing downloaded data
-GSOD.varrefs <- read.csv(system.file("gsod_ref.csv", package="geoclimate"), stringsAsFactors=FALSE)
+GSOD.varrefs <- read.csv(system.file("GSOD.varrefs.csv", package="geoclimate"), stringsAsFactors=FALSE)
 
-GSOD.readStations <- function(stationfile=system.file("gsod_stations.csv", package="geoclimate"), rm.nodata=FALSE, rm.nocoords=TRUE){
+GSOD.readStations <- function(stationfile=system.file("GSOD.stations.csv", package="geoclimate"), rm.nodata=FALSE, rm.nocoords=TRUE){
     show.message("Reading GSOD station info file.", appendLF=TRUE)					
     stations <- read.csv(stationfile, stringsAsFactors=FALSE)
     if(rm.nodata) stations <- stations[-which(is.na(stations$BEGIN)),]
@@ -31,6 +31,7 @@ GSOD.readStations <- function(stationfile=system.file("gsod_stations.csv", packa
     stations$END <- as.Date(as.character(stations$END), "%Y%m%d")
 	return(stations)
 }
+
 GSOD.stations <- GSOD.readStations()
 
 GSOD.updateStations <- function(){
@@ -42,18 +43,18 @@ GSOD.updateStations <- function(){
 		online <-  unlist(strsplit(getURL("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/"),ifelse(Sys.info()["sysname"]=="Windows","\r\n","\n")))
 		oinfo <- unlist(strsplit(online[grep("ISH-HISTORY.CSV$",online)],"[[:space:]]+"))
 		
-		age <- difftime(as.Date(paste(oinfo[6:7], collapse=" "), "%b %d"),file.info(system.file("gsod_stations.csv", package="geoclimate"))$ctime, units="weeks")
-		size <- as.numeric(oinfo[5])-file.info(system.file("gsod_stations.csv", package="geoclimate"))$size
+		age <- difftime(as.Date(paste(oinfo[6:7], collapse=" "), "%b %d"),file.info(system.file("GSOD.stations.csv", package="geoclimate"))$ctime, units="weeks")
+		size <- as.numeric(oinfo[5])-file.info(system.file("GSOD.stations.csv", package="geoclimate"))$size
 
 		if (age>2 | size!=0){
-			if(!file.copy(system.file("gsod_stations.csv", package="geoclimate"),paste(system.file("gsod_stations.csv", package="geoclimate"),".bck",sep=""),overwrite=TRUE)){
+			if(!file.copy(system.file("GSOD.stations.csv", package="geoclimate"),paste(system.file("GSOD.stations.csv", package="geoclimate"),".bck",sep=""),overwrite=TRUE)){
 				show.message("Unable to create station data backup file. GSOD update process aborted.", appendLF=TRUE)
 			} else {
 				show.message("Downloading station info file from GSOD FTP site.", EL=TRUE, appendLF=FALSE)
-				dl.success <- withRetry(download.file("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/ISH-HISTORY.CSV",system.file("gsod_stations.csv", package="geoclimate"),mode="wb"))
+				dl.success <- withRetry(download.file("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/ISH-HISTORY.CSV",system.file("GSOD.stations.csv", package="geoclimate"),mode="wb"))
 				if (dl.success!=0){
 					show.message("Failed to connect GSOD FTP site.", appendLF=TRUE)
-					file.copy(system.file("gsod_stations.csv.bck", package="geoclimate"),system.file("gsod_stations.csv", package="geoclimate"),overwrite=TRUE)
+					file.copy(system.file("GSOD.stations.csv.bck", package="geoclimate"),system.file("GSOD.stations.csv", package="geoclimate"),overwrite=TRUE)
 				} 
 				show.message("GSOD Stations info file update complete.", EL=TRUE, appendLF=TRUE)
 				success <- TRUE
