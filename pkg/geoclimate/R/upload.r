@@ -1,13 +1,10 @@
 # Author: Jorrel Khalil S. Aunario, jaunario@gmail.com
 # Date :  1 March 2012
-# Version 0.0.1
+# Version 0.0.3
 # Licence GPL v3
-SM.new    <- 0
-SM.update <- 1
-SM.append <- 2
 
-.upload <- function(con, wthdframe, tablename, savemode=SM.append,...){
-	proc <- try(sqlSave(con, wthdframe, tablename, rownames=FALSE, append=(savemode==SM.append),...))
+.upload <- function(con, wthdframe, tablename, savemode=UM.append,...){
+	proc <- try(sqlSave(con, wthdframe, tablename, rownames=FALSE, append=(savemode==UM.append),...))
 	success <- class(proc)!="try-error"
 	if(!success) show.message(proc, appendLF=TRUE)
 	#TODO: support transaction
@@ -135,3 +132,19 @@ upload.fse <- function(dbasecon, clim, setname, stations=NA, has.AIid=FALSE){
 	if (success & !is.na(stations) & add) sqlSave(dbasecon, station_info, tablename=stations, append=TRUE, rownames=FALSE) else if (success & !is.na(stations)) sqlUpdate(dbasecon, station_info, tablename=stations)
 	return(success)
 }
+
+upload.cru <- function(dbasecon, cru, setname="cruv321_30m"){
+	
+	success <- FALSE
+	
+	if (class(cru)!="weather"){
+		stop("Invalid cru input. Should be class 'weather'")
+	} 
+	
+	#igsod <- cbind(as.numeric(gsod@stn), gsod@w)
+	#colnames(igsod) <- c('station_id', colnames(gsod@w))
+	success <- .upload(dbasecon, cru@w, tablename=setname)
+	
+	return(success)    
+	
+}  
