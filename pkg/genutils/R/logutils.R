@@ -6,7 +6,7 @@
 show.message <- function(..., EL=FALSE, delay=0){
   # Real-time console messages
   if (EL){
-    message(rep(" ", options("width")),"\r", appendLF=FALSE)
+    message(rep(" ", options("width")$width-1),"\r", appendLF=FALSE)
   } 
   message(...)
   Sys.sleep(delay)
