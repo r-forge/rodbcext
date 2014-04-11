@@ -7,27 +7,33 @@ get.jobs <- function(initjobs, jobfile="jobs.Rdata",workload=500,delay=10, maxtr
 	myjob <- vector()
 	worker.id <- Sys.getpid()
 	
-	if(!file.exists(jobfile)){
-		jobs <- initjobs
-		save(jobs, file=jobfile)
-		
-		filelock <- data.frame(filename=character(0),worker=numeric(0))
-		filelock[1,] <- NA
-		filelock$filename[1] <- jobfile   
-		write.csv(filelock,"files.csv",row.names=FALSE)		
- 
+	if(!file.exists("files.csv")){
+		filelock <- data.frame(filename=character(0),worker=numeric(0), stringsAsFactors=FALSE)		
+	} else {
+		filelock <- read.csv("files.csv",stringsAsFactors=FALSE)
 	}
+	
+	if(is.na(match(jobfile,filelock$filename))){
+		jobs <- initjobs
+		save(jobs, file=jobfile)		
+		new.id <- nrow(filelock)+1
+		filelock[new.id,] <- NA		
+		filelock$filename[new.id] <- jobfile   
+		write.csv(filelock,"files.csv",row.names=FALSE)		 
+	} 
 	
 	tries <- 0
 	repeat{
 		filelock <- read.csv("files.csv",stringsAsFactors=FALSE)
-		if(is.na(filelock$worker[filelock$filename==jobfile])){
-			filelock$worker[filelock$filename==jobfile] <- worker.id
+		if(is.na(filelock$worker[match(jobfile,filelock$filename)])){
+			filelock$worker[match(jobfile,filelock$filename)] <- worker.id
 			write.csv(filelock,"files.csv",row.names=FALSE)
 			load(jobfile)
-			myjob <- jobs[1:min(workload,length(jobs))] 
-			jobs <- jobs[!jobs %in% myjob]
-			save(jobs, file=jobfile)
+			if(length(jobs)>0){
+				myjob <- jobs[1:min(workload,length(jobs))] 
+				jobs <- jobs[!jobs %in% myjob]
+				save(jobs, file=jobfile)				
+			}
 			filelock$worker[filelock$filename==jobfile] <- NA
 			write.csv(filelock,"files.csv",row.names=FALSE)
 			break
@@ -41,4 +47,20 @@ get.jobs <- function(initjobs, jobfile="jobs.Rdata",workload=500,delay=10, maxtr
 		}	
 	}
 	return(myjob)
+}
+
+combine.output <- function(newdata, out.rdata="output.Rdata",delay=10){
+	success <- FALSE
+	
+	if(!file.exists("files.csv")){
+		filelock <- data.frame(filename=character(0),worker=numeric(0), stringsAsFactors=FALSE)		
+	} else {
+		filelock <- read.csv("files.csv",stringsAsFactors=FALSE)
+	}
+	
+	if(!file.exists(out.rdata)){
+		filelock <- read.csv("files.csv",stringsAsFactors=FALSE)		
+	}
+	success <- TRUE
+	return(success)	
 }
