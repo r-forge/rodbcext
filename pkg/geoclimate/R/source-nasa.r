@@ -28,7 +28,7 @@ get.nasa <- function(x, y, vars=c("toa_dwn","swv_dwn","lwv_dwn","T2M", "T2MN","T
 	stdate <- as.Date(stdate)
 	endate <- as.Date(endate)
 	
-	fname <- paste(paste("nasa",cell,x,y,format(stdate,"%Y.%m.%d"),format(endate,"%Y.%m.%d"), sep="_"), ".txt",sep="")
+	fname <- paste(paste("nasa",sprintf("%06i",cell),sprintf("%05.1f",x),sprintf("%05.1f",y),format(stdate,"%Y.%m.%d"),format(endate,"%Y.%m.%d"), sep="_"), ".txt",sep="")
 	#dlurl <- paste("http://earth-www.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",format(stdate,"%m"),"&ds=",format(stdate,"%d"),"&ys=",format(stdate,"%Y"),"&me=",format(endate,"%m"),"&de=",format(endate,"%d"),"&ye=",format(endate,"%Y"),"&p=swv_dwn&p=T2M&p=T2MN&p=T2MX&p=RH2M&p=DFP2M&p=RAIN&p=WS10M&submit=Submit", sep="")
 	dlurl <- paste("http://power.larc.nasa.gov/cgi-bin/cgiwrap/solar/agro.cgi?email=agroclim%40larc.nasa.gov&step=1&lat=",y,"&lon=",x,"&ms=",monthFromDate(stdate),"&ds=",dayFromDate(stdate),"&ys=",yearFromDate(stdate),"&me=",monthFromDate(endate),"&de=",dayFromDate(endate),"&ye=",yearFromDate(endate),"&p=", paste(vars,collapse="&p=",sep=""),"&submit=Submit", sep="")
 	
