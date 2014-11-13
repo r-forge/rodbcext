@@ -96,6 +96,8 @@ fetch.monthly <-	function(xy, srcvars, connection, warehouse="geowarehouse",...)
 					
 					stdcells <- cellFromXY(baseraster,xy)
 					tmp <- .fetch(cells=stdcells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]], timestep=TS.monthly, ...)
+					if(length(srcvars[[i]])==1 & (is.na(srcvars[[i]]) | tolower(srcvars[[i]])=="all" | srcvars[[i]]=="*")) srcvars[[i]] <- colnames(tmp)[!colnames(tmp) %in% c("cell", "wdate", "idx")]
+						
 				    #tmp <- fetch(cells=stdcells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]]) 
 					tmp$idx <- match(tmp$cell, stdcells) 
 					tmp[,srcvars[[i]]] <- tmp[,srcvars[[i]]]/srcm$zval
@@ -165,6 +167,7 @@ fetch.daily <-	function(xy, srcvars, connection, warehouse="geowarehouse",...){
 			
 			stdcells <- cellFromXY(baseraster,xy)
 			tmp <- .fetch(cells=stdcells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]], timestep=TS.daily, ...)
+			if(length(srcvars[[i]])==1 & (is.na(srcvars[[i]]) | tolower(srcvars[[i]])=="all" | srcvars[[i]]=="*")) srcvars[[i]] <- colnames(tmp)[!colnames(tmp) %in% c("cell", "wdate", "idx")]
 			#tmp <- fetch(cells=stdcells, con=connection, wset=paste(srcm$schema_name,srcm$table_name, sep=".") , vars=srcvars[[i]]) 
 			tmp$idx <- match(tmp$cell, stdcells) 
 			tmp[,srcvars[[i]]] <- tmp[,srcvars[[i]]]/srcm$zval
