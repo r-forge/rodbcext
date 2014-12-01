@@ -20,12 +20,12 @@ GSOD.readStations <- function(stationfile=system.file("GSOD.stations.csv", packa
     stations <- cbind(stationid,stations, stringsAsFactors=FALSE)
     
     # Change to float
-    stations$LAT <- stations$LAT/1000
-    stations$LON <- stations$LON/1000
-    stations$ELEV..1M.[stations$ELEV..1M.==-99999] <- NA
-    stations$ELEV..1M. <- stations$ELEV..1M./10
+    stations$LAT <- stations$LAT
+    stations$LON <- stations$LON
+    stations$ELEV..1M.[stations$ELEV.M.==-99999] <- NA
+    stations$ELEV..1M. <- stations$ELEV.M.
     # Rename elevation fieldname 
-    colnames(stations)[colnames(stations)=="ELEV..1M."] <- "ELEV1M"
+    colnames(stations)[colnames(stations)=="ELEV.M."] <- "ELEV1M"
     # Change to date 
     stations$BEGIN <- as.Date(as.character(stations$BEGIN), "%Y%m%d")
     stations$END <- as.Date(as.character(stations$END), "%Y%m%d")
@@ -40,8 +40,8 @@ GSOD.updateStations <- function(){
 		show.message("Error: RCurl package not found.", appendLF=TRUE)		
 	} else {
 		show.message("Checking file differences.", appendLF=TRUE)
-		online <-  unlist(strsplit(getURL("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/"),ifelse(Sys.info()["sysname"]=="Windows","\r\n","\n")))
-		oinfo <- unlist(strsplit(online[grep("ISH-HISTORY.CSV$",online)],"[[:space:]]+"))
+		online <-  unlist(strsplit(getURL("ftp://ftp.ncdc.noaa.gov/pub/data/noaa/"),ifelse(Sys.info()["sysname"]=="Windows","\r\n","\n")))
+		oinfo <- unlist(strsplit(online[grep("ISD-HISTORY.CSV$", online, ignore.case=TRUE)],"[[:space:]]+"))
 		
 		age <- difftime(as.Date(paste(oinfo[6:7], collapse=" "), "%b %d"),file.info(system.file("GSOD.stations.csv", package="geoclimate"))$ctime, units="weeks")
 		size <- as.numeric(oinfo[5])-file.info(system.file("GSOD.stations.csv", package="geoclimate"))$size
@@ -51,7 +51,7 @@ GSOD.updateStations <- function(){
 				show.message("Unable to create station data backup file. GSOD update process aborted.", appendLF=TRUE)
 			} else {
 				show.message("Downloading station info file from GSOD FTP site.", EL=TRUE, appendLF=FALSE)
-				dl.success <- withRetry(download.file("ftp://ftp.ncdc.noaa.gov/pub/data/inventories/ISH-HISTORY.CSV",system.file("GSOD.stations.csv", package="geoclimate"),mode="wb"))
+				dl.success <- withRetry(download.file(paste("ftp://ftp.ncdc.noaa.gov/pub/data/noaa/",oinfo[9],sep=""),system.file("GSOD.stations.csv", package="geoclimate"),mode="wb"))
 				if (dl.success!=0){
 					show.message("Failed to connect GSOD FTP site.", appendLF=TRUE)
 					file.copy(system.file("GSOD.stations.csv.bck", package="geoclimate"),system.file("GSOD.stations.csv", package="geoclimate"),overwrite=TRUE)
